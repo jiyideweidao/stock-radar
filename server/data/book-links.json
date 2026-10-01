@@ -1,0 +1,285 @@
+{
+  "generatedAt": "2026-10-01",
+  "source": "douban legacy search (public metadata only)",
+  "links": {
+    "livermore": {
+      "subjectId": "27601129",
+      "url": "https://book.douban.com/subject/27601129/",
+      "matchedTitle": "股票大作手回忆录",
+      "rating": "8.5",
+      "cast": "[美] 埃德温·勒菲弗 / 王坤 / 中华工商联合出版社 / 2017",
+      "trial": false,
+      "ebook": false
+    },
+    "trading-in-the-zone": {
+      "subjectId": "5976544",
+      "url": "https://book.douban.com/subject/5976544/",
+      "matchedTitle": "交易心理分析",
+      "rating": "7.8",
+      "cast": "马克·道格拉斯 / 刘真如 / 电子工业出版社 / 2011",
+      "trial": false,
+      "ebook": false
+    },
+    "kline": {
+      "subjectId": "26590010",
+      "url": "https://book.douban.com/subject/26590010/",
+      "matchedTitle": "一本书读懂K线图",
+      "rating": "6.2",
+      "cast": "王坤 / 中华工商联合出版社 / 2015",
+      "trial": false,
+      "ebook": false
+    },
+    "xinshou": {
+      "subjectId": "6729108",
+      "url": "https://book.douban.com/subject/6729108/",
+      "matchedTitle": "新手炒股快速入门",
+      "rating": "8.5",
+      "cast": "齐晓明 / 中国劳动 / 2011",
+      "trial": false,
+      "ebook": false
+    },
+    "xiaogou-qianqian": {
+      "subjectId": "35295592",
+      "url": "https://book.douban.com/subject/35295592/",
+      "matchedTitle": "小狗钱钱",
+      "rating": "9.2",
+      "cast": "[德] 博多·舍费尔 / 文燚 / 中信出版集团 / 2021",
+      "trial": false,
+      "ebook": false
+    },
+    "peter-lynch-one-up": {
+      "subjectId": "4827219",
+      "url": "https://book.douban.com/subject/4827219/",
+      "matchedTitle": "彼得·林奇的成功投资",
+      "rating": "9.0",
+      "cast": "[美] 彼得·林奇 / 刘建位 / 机械工业出版社 / 2010",
+      "trial": false,
+      "ebook": false
+    },
+    "yibenshu-caibao": {
+      "subjectId": "36076424",
+      "url": "https://book.douban.com/subject/36076424/",
+      "matchedTitle": "一本书读懂财报 (第三版)",
+      "rating": "8.8",
+      "cast": "肖星 / 浙江大学出版社 / 2022",
+      "trial": false,
+      "ebook": false
+    },
+    "chaogu-zhihui": {
+      "subjectId": "30482551",
+      "url": "https://book.douban.com/subject/30482551/",
+      "matchedTitle": "炒股的智慧",
+      "rating": "8.9",
+      "cast": "陈江挺 / 商务印书馆 / 2019",
+      "trial": false,
+      "ebook": false
+    },
+    "rich-dad-poor-dad": {
+      "subjectId": "27153484",
+      "url": "https://book.douban.com/subject/27153484/",
+      "matchedTitle": "富爸爸穷爸爸",
+      "rating": "8.2",
+      "cast": "[美] 罗伯特·清崎 / 萧明 / 四川人民出版社 / 2017",
+      "trial": false,
+      "ebook": false
+    },
+    "dadao-duanyongping": {
+      "subjectId": "37322503",
+      "url": "https://book.douban.com/subject/37322503/",
+      "matchedTitle": "大道",
+      "rating": "8.5",
+      "cast": "中信出版集团 / 2025",
+      "trial": false,
+      "ebook": false
+    },
+    "random-walk": {
+      "subjectId": "37220253",
+      "url": "https://book.douban.com/subject/37220253/",
+      "matchedTitle": "漫步华尔街 (第13版)",
+      "rating": "8.4",
+      "cast": "[美] 伯顿·G.马尔基尔 / 张伟 / 机械工业出版社 / 2024",
+      "trial": true,
+      "ebook": true
+    },
+    "psychology-of-money": {
+      "subjectId": "36415996",
+      "url": "https://book.douban.com/subject/36415996/",
+      "matchedTitle": "金钱心理学",
+      "rating": "8.2",
+      "cast": "[美] 摩根 · 豪泽尔 / 李青宗 / 民主与建设出版社 / 2023",
+      "trial": true,
+      "ebook": true
+    },
+    "linyuan-miji": {
+      "subjectId": "34978176",
+      "url": "https://book.douban.com/subject/34978176/",
+      "matchedTitle": "林园炒股秘籍",
+      "rating": "7.9",
+      "cast": "王洪 / 山西人民出版社 / 2019",
+      "trial": false,
+      "ebook": false
+    },
+    "intelligent-investor": {
+      "subjectId": "26752026",
+      "url": "https://book.douban.com/subject/26752026/",
+      "matchedTitle": "聪明的投资者（第4版注疏点评版）",
+      "rating": "8.9",
+      "cast": "【美】本杰明•格雷厄姆 / 王中华 / 人民邮电出版社 / 2016",
+      "trial": false,
+      "ebook": false
+    },
+    "buffett-letters": {
+      "subjectId": "30164963",
+      "url": "https://book.douban.com/subject/30164963/",
+      "matchedTitle": "巴菲特致股东的信 (第4版)",
+      "rating": "8.9",
+      "cast": "[美国] 沃伦·巴菲特 / 杨天南 / 机械工业出版社 / 2018",
+      "trial": true,
+      "ebook": true
+    },
+    "touzi-jiandan": {
+      "subjectId": "26163553",
+      "url": "https://book.douban.com/subject/26163553/",
+      "matchedTitle": "投资中最简单的事",
+      "rating": "8.7",
+      "cast": "邱国鹭 / 中国人民大学出版社 / 2014",
+      "trial": true,
+      "ebook": true
+    },
+    "gushi-jinjie": {
+      "subjectId": "25829645",
+      "url": "https://book.douban.com/subject/25829645/",
+      "matchedTitle": "股市进阶之道",
+      "rating": "8.7",
+      "cast": "李杰 / 中国铁道出版社 / 2014",
+      "trial": false,
+      "ebook": false
+    },
+    "jiazhi-shizhan": {
+      "subjectId": "30416923",
+      "url": "https://book.douban.com/subject/30416923/",
+      "matchedTitle": "价值投资实战手册",
+      "rating": "8.7",
+      "cast": "唐朝 / 中国经济出版社 / 2019",
+      "trial": false,
+      "ebook": false
+    },
+    "poor-charlies-almanack": {
+      "subjectId": "37003888",
+      "url": "https://book.douban.com/subject/37003888/",
+      "matchedTitle": "穷查理宝典",
+      "rating": "8.7",
+      "cast": "[美] 彼得·考夫曼(编) / 李继宏 / 中信出版集团 / 2024",
+      "trial": false,
+      "ebook": false
+    },
+    "pick-growth-stocks": {
+      "subjectId": "27202775",
+      "url": "https://book.douban.com/subject/27202775/",
+      "matchedTitle": "怎样选择成长股",
+      "rating": "8.5",
+      "cast": "[美] 菲利普·A.费舍 / 吕可嘉 / 地震出版社 / 2017",
+      "trial": false,
+      "ebook": false
+    },
+    "beating-the-street": {
+      "subjectId": "4772963",
+      "url": "https://book.douban.com/subject/4772963/",
+      "matchedTitle": "战胜华尔街",
+      "rating": "8.3",
+      "cast": "[美] 彼得·林奇 / 刘建位 / 机械工业出版社 / 2010",
+      "trial": false,
+      "ebook": false
+    },
+    "chaoyue-renxing": {
+      "subjectId": "4312597",
+      "url": "https://book.douban.com/subject/4312597/",
+      "matchedTitle": "超越人性",
+      "rating": "6.0",
+      "cast": "李大霄 / 经济日报出版社 / 2010",
+      "trial": false,
+      "ebook": false
+    },
+    "buffett-way": {
+      "subjectId": "26335181",
+      "url": "https://book.douban.com/subject/26335181/",
+      "matchedTitle": "巴菲特之道",
+      "rating": "8.5",
+      "cast": "罗伯特·哈格斯特朗 / 杨天南 / 机械工业出版社 / 2015",
+      "trial": true,
+      "ebook": true
+    },
+    "security-analysis": {
+      "subjectId": "24092345",
+      "url": "https://book.douban.com/subject/24092345/",
+      "matchedTitle": "证券分析",
+      "rating": "8.9",
+      "cast": "[美] 本杰明·格雷厄姆 / 巴曙松 / 中国人民大学出版社 / 2013",
+      "trial": false,
+      "ebook": false
+    },
+    "most-important-thing": {
+      "subjectId": "10799082",
+      "url": "https://book.douban.com/subject/10799082/",
+      "matchedTitle": "投资最重要的事",
+      "rating": "8.7",
+      "cast": "[美] 霍华德·马克斯 Howard Marks / 孙 伊 / 中信出版社 / 2012",
+      "trial": true,
+      "ebook": true
+    },
+    "competitive-strategy": {
+      "subjectId": "25905229",
+      "url": "https://book.douban.com/subject/25905229/",
+      "matchedTitle": "竞争战略",
+      "rating": "8.3",
+      "cast": "[美] 迈克尔·波特 / 陈丽芳 / 中信出版社 / 2014",
+      "trial": true,
+      "ebook": true
+    },
+    "margin-of-safety": {
+      "subjectId": "36228319",
+      "url": "https://book.douban.com/subject/36228319/",
+      "matchedTitle": "安全边际",
+      "rating": "8.4",
+      "cast": "塞思·卡拉曼 / 常虹 / 中国青年出版社 / 2016",
+      "trial": false,
+      "ebook": false
+    },
+    "snowball": {
+      "subjectId": "3291970",
+      "url": "https://book.douban.com/subject/3291970/",
+      "matchedTitle": "滚雪球（上）",
+      "rating": "8.0",
+      "cast": "[美] 艾丽斯·施罗德 / 覃扬眉 / 中信出版社 / 2009",
+      "trial": true,
+      "ebook": false
+    },
+    "civilization-value-china": {
+      "subjectId": "34997975",
+      "url": "https://book.douban.com/subject/34997975/",
+      "matchedTitle": "文明、现代化、价值投资与中国",
+      "rating": "8.1",
+      "cast": "李录 / 中信出版集团 / 2020",
+      "trial": true,
+      "ebook": true
+    },
+    "touzi-bujiandan": {
+      "subjectId": "27622006",
+      "url": "https://book.douban.com/subject/27622006/",
+      "matchedTitle": "投资中不简单的事",
+      "rating": "7.4",
+      "cast": "邱国鹭 / 四川人民出版社 / 2018",
+      "trial": true,
+      "ebook": true
+    },
+    "value-zhanglei": {
+      "subjectId": "35188914",
+      "url": "https://book.douban.com/subject/35188914/",
+      "matchedTitle": "价值",
+      "rating": "7.1",
+      "cast": "张磊 / 浙江教育出版社 / 2020",
+      "trial": true,
+      "ebook": true
+    }
+  }
+}

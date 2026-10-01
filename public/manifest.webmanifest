@@ -1,0 +1,65 @@
+{
+  "name": "股民舆情与商品看板 · 工作站",
+  "short_name": "股民看板",
+  "description": "自选股行情、舆情新闻、选股器、股吧、棉花与大宗商品、煤炭港口库存与进口、交易知识库。数据来自公开财经站点，仅供研究记录，不构成投资建议。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "/?app=1&from=pwa",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#0b0f16",
+  "theme_color": "#0b0f16",
+  "categories": [
+    "finance",
+    "business",
+    "news"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "自选股",
+      "short_name": "自选股",
+      "url": "/?app=1&view=stocks"
+    },
+    {
+      "name": "舆情新闻",
+      "short_name": "新闻",
+      "url": "/?app=1&view=news"
+    },
+    {
+      "name": "煤炭库存",
+      "short_name": "煤炭",
+      "url": "/?app=1&view=coal"
+    },
+    {
+      "name": "选股建议",
+      "short_name": "建议",
+      "url": "/?app=1&view=advice"
+    }
+  ]
+}

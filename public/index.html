@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f16">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="股民看板">
+<meta name="description" content="自选股行情、舆情新闻、选股器、股吧、棉花与大宗商品、煤炭港口库存与进口，数据来自公开财经站点。">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>股民舆情与商品看板 · 工作站</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">股民舆情与商品看板 <small>行情 · 选股 · 舆情 · 股吧 · 煤炭 · 知识库</small></div>
+  <div class="index-strip" id="indexStrip"><span class="dim">指数加载中…</span></div>
+  <div class="win-controls" id="winControls" title="窗口控制：最小化 / 最大化 / 关闭（桌面版可用）">
+    <button class="win-btn wide" data-win="topmost-on" id="winTopmost" title="让窗口始终显示在最上层（再点一次取消）">置顶</button>
+    <button class="win-btn" data-win="minimize" title="最小化窗口（后台服务继续运行）" aria-label="最小化">
+      <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1.4" y1="5" x2="8.6" y2="5"></line></svg>
+    </button>
+    <button class="win-btn" data-win="maximize" id="winMax" title="最大化 / 还原窗口" aria-label="最大化或还原">
+      <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1.6" y="1.6" width="6.8" height="6.8"></rect></svg>
+    </button>
+    <button class="win-btn danger" data-win="close" title="关闭工作站窗口（同时停止后台服务）" aria-label="关闭">
+      <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1.8" y1="1.8" x2="8.2" y2="8.2"></line><line x1="8.2" y1="1.8" x2="1.8" y2="8.2"></line></svg>
+    </button>
+  </div>
+</header>
+
+<div class="menubar" id="menubar">
+  <div class="menu">
+    <button class="menu-title">页面</button>
+    <div class="menu-list">
+      <button data-jump="overview">总览</button>
+      <button data-jump="stocks">自选股</button>
+      <button data-jump="embed">金融界大盘云图</button>
+      <button data-jump="news">舆情新闻</button>
+      <button data-jump="sources">数据源浏览</button>
+      <button data-jump="screener">选股器</button>
+      <button data-jump="advice">选股建议</button>
+      <button data-jump="guba">股吧</button>
+      <button data-jump="commodity">棉花 / 大宗商品</button>
+      <button data-jump="coal">煤炭库存 / 进口</button>
+      <button data-jump="knowledge">交易知识库</button>
+    </div>
+  </div>
+  <div class="menu">
+    <button class="menu-title">数据源</button>
+    <div class="menu-list">
+      <button data-source="cls">财联社电报</button>
+      <button data-source="em724">东方财富 7×24</button>
+      <button data-source="ths">同花顺要闻</button>
+      <button data-source="sina">新浪财经滚动</button>
+      <button data-source="wscn">华尔街见闻</button>
+      <button data-source="jin10">金十数据</button>
+    </div>
+  </div>
+  <div class="menu">
+    <button class="menu-title">视图</button>
+    <div class="menu-list">
+      <button data-act="refresh">刷新当前页数据（立即）</button>
+      <button data-act="refreshAll">刷新所有页数据（清空缓存标记）</button>
+      <button data-act="reload">重新加载整个工作站</button>
+      <button data-act="fullscreen">切换全屏（F11 亦可）</button>
+    </div>
+  </div>
+  <div class="menu">
+    <button class="menu-title">窗口</button>
+    <div class="menu-list">
+      <button data-win="minimize">最小化</button>
+      <button data-win="maximize">最大化 / 还原</button>
+      <button data-win="restore">还原并置于最前</button>
+      <button data-win="topmost-on">窗口置顶（始终最前）</button>
+      <button data-win="topmost-off">取消置顶</button>
+      <button data-win="state">检查窗口状态</button>
+      <button data-win="close">关闭窗口（同时停止后台服务）</button>
+      <div class="menu-note">关闭窗口 = 退出整个程序：后台服务会一起停止，不会留在后台运行</div>
+        <div class="menu-note">双击桌面「股民舆情工作站」快捷方式启动后，这些按钮才会真正操作窗口</div>
+    </div>
+  </div>
+  <div class="menu">
+    <button class="menu-title">帮助</button>
+    <div class="menu-list">
+      <button data-act="netPanel">手机访问（扫码 / 局域网地址）</button>
+      <button data-act="selfcheck">运行工作站自检…</button>
+      <button data-act="disclaimer">数据真实性与免责声明</button>
+      <button data-act="health">查看服务与缓存状态</button>
+      <div class="menu-note">窗口的最小化 / 最大化 / 关闭：用标题栏右侧按钮（关闭窗口会同时停止后台服务）</div>
+      <div class="menu-note">当前页每 30–180 秒自动刷新，状态栏显示上次数据时间与节奏</div>
+      <div class="menu-note">快捷键：Alt+← 返回、Ctrl+R 刷新、F11 全屏</div>
+    </div>
+  </div>
+  <div class="menubar-status" id="menubarStatus"><span class="dim">服务状态检查中…</span></div>
+</div>
+<nav class="tabs" id="tabs">
+  <button data-view="overview" class="active">总览</button>
+  <button data-view="stocks">自选股</button>
+  <button data-view="embed">大盘云图</button>
+  <button data-view="news">舆情新闻</button>
+  <button data-view="sources">数据源浏览</button>
+  <button data-view="screener">选股器</button>
+  <button data-view="advice">选股建议</button>
+  <button data-view="guba">股吧</button>
+  <button data-view="commodity">棉花 / 大宗商品</button>
+  <button data-view="coal">煤炭库存 / 进口</button>
+  <button data-view="knowledge">交易知识库</button>
+</nav>
+
+<main>
+  <section class="view active" id="view-overview">
+    <div id="overviewNotice"></div>
+    <div class="grid cols-4" id="watchCards" style="margin-top:14px"></div>
+    <div class="grid cols-3" style="margin-top:14px">
+      <div class="card">
+        <h3>市场舆情温度 <span class="tag">近 7 日新闻加权</span></h3>
+        <div id="overallSentiment" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>关注品种 <span class="tag">棉花 / 焦煤 / 焦炭</span></h3>
+        <div id="overviewCommodity" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>煤炭港口库存速览 <span class="tag">示例/导入数据</span></h3>
+        <div id="overviewCoal" class="loading">加载中…</div>
+      </div>
+    </div>
+    <div class="grid cols-3" style="margin-top:14px">
+      <div class="card">
+        <h3>全市场涨跌家数 <span class="tag">新浪财经</span></h3>
+        <div id="overviewBreadth" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>自选股分时 <span class="tag">当日涨跌幅对比</span></h3>
+        <canvas id="watchChart" height="300"></canvas>
+        <div class="legend" id="watchLegend" style="margin-top:6px"></div>
+        <div class="hint" id="overviewWatchNote" style="margin-top:6px">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>板块涨幅榜 <span class="tag">同花顺板块指数</span></h3>
+        <div id="overviewSectors" class="loading">加载中…</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>最新快讯 <span class="tag">多源聚合</span></h3>
+      <ul class="news-list" id="overviewNews"><li class="loading">加载中…</li></ul>
+    </div>
+    <div class="card desktop-only" id="netPanel" style="margin-top:14px">
+      <h3>手机访问这个工作站 <span class="tag">手机与电脑连同一 Wi-Fi 即可</span></h3>
+      <div id="netPanelBody" class="loading">正在检测局域网地址…</div>
+    </div>
+    <div class="hint" style="margin-top:10px">本页每 30 秒自动刷新一次；状态栏显示上一次拿到数据的时刻。某一格没取到时会单独显示重试按钮，不影响其它卡片。</div>
+  </section>
+
+  <section class="view" id="view-stocks">
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>自选股行情 <span class="tag">点击任意一行打开「个股体检」</span></h3>
+        <div id="stockTable" class="loading">加载中…</div>
+        <div class="hint" style="margin-top:10px">本页每 30 秒自动刷新一次。点某一行会打开「个股体检」——那里有日 K 线、分时走势、技术指标、8 条规则的逐条校验，以及个股舆情和相关新闻。</div>
+      </div>
+      <div class="card">
+        <h3>自选股主力资金 <span class="tag">东方财富 · 当日累计</span></h3>
+        <div id="stockFundFlow" class="loading">加载中…</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-embed">
+    <div class="card">
+      <h3>金融界 · 大盘云图 <span class="tag">第三方页面原样嵌入</span></h3>
+      <div class="embed-bar">
+        <div class="filters embed-seg" id="embedSeg" style="margin-bottom:0">
+          <button data-embed="dpyt" class="active">大盘云图</button>
+          <button data-embed="zdtwdj">涨跌停温度计</button>
+          <button data-embed="lhb">龙虎榜</button>
+        </div>
+        <div class="embed-tools">
+          <button class="action ghost" id="embedReloadBtn">重新加载</button>
+          <button class="action ghost" id="embedOpenBtn">在浏览器打开</button>
+        </div>
+      </div>
+      <div class="notice" id="embedNotice" style="margin:12px 0">正在检查这个页面能不能被嵌进来…</div>
+      <div class="embed-wrap" id="embedWrap">
+        <iframe id="embedFrame" class="embed-frame" title="金融界大盘云图" referrerpolicy="no-referrer"></iframe>
+      </div>
+      <div class="hint" style="margin-top:10px">
+        本页内容由金融界 <code>summary.jrj.com.cn</code> 直接加载，本站只做嵌入，不修改、不缓存它的任何数据；
+        页面里的「登录 / 注册」「VIP」「下载 App」等入口属于金融界自身，与本站无关。
+        <br>能否嵌入由对方说了算：实测只有「大盘云图」没有设限，另两个页签对方设了 <code>X-Frame-Options: SAMEORIGIN</code>，
+        所以这里会如实提示并给你「在浏览器打开」的入口——不会用一个空白框糊弄过去。
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-news">
+    <div class="filters" id="newsFilters">
+      <span class="dim">主题过滤：</span>
+      <button data-topic="" class="active">全部</button>
+      <button data-topic="cotton">棉花</button>
+      <button data-topic="coal">煤炭</button>
+      <button data-topic="commodity">大宗商品</button>
+      <button data-topic="macro">宏观政策</button>
+      <button data-topic="market">市场资金</button>
+      <button class="action ghost" id="newsRefresh" style="margin-left:auto">刷新</button>
+    </div>
+    <div class="card">
+      <h3>多源新闻聚合 <span class="tag" id="newsMeta">—</span></h3>
+      <div class="notice" style="margin-bottom:12px" id="newsNotice">
+        数据源为东方财富 7×24 快讯与全站新闻检索、新浪财经滚动新闻、财联社电报（已复现 sign 签名）、同花顺当日要闻、华尔街见闻与金十数据。
+        彭博社为订阅制且本机不可达，已用上述公开源替代；百度股市通热榜接口触发风控。
+      </div>
+      <ul class="news-list" id="newsList"><li class="loading">加载中…</li></ul>
+    </div>
+  </section>
+
+  <section class="view" id="view-sources">
+    <div class="notice" id="sourcesNotice">
+      按你点名的源逐个浏览。每个源独立抓取、独立展示，任一源失败不影响其他源；
+      右侧为该源最新条目与情绪评分，下方表格如实标注「点名源」与「实际接入源」的对应关系，不做隐瞒。
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>点名数据源 <span class="tag">点击切换</span></h3>
+        <div class="src-list" id="sourceList"><div class="loading">加载中…</div></div>
+        <h3 style="margin-top:16px">接入状态对照 <span class="tag">点名源 vs 实际</span></h3>
+        <div id="sourceSubst" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3 id="sourceFeedTitle">源内容</h3>
+        <div id="sourceSentiment" class="hint">—</div>
+        <ul class="news-list" id="sourceFeed"><li class="loading">加载中…</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-screener">
+    <div class="notice">
+      选股器按「规则 + 排序」从全市场行情节点里筛出符合条件的一批股票，属于条件筛选结果，<b>不是推荐</b>，也不预测涨跌。
+      数据来自新浪财经全市场行情（含北交所），点任意一行可跳到「个股体检」逐条核对知识库规则。
+    </div>
+    <div class="filters" id="screenerPresets" style="margin-top:14px"><span class="dim">加载预设…</span></div>
+    <div class="card">
+      <h3>自定义条件 <span class="tag">留空即不限制</span></h3>
+      <div class="form-grid" id="screenerForm">
+        <label>市场节点 <select id="scNode"></select></label>
+        <label>排序字段 <select id="scSort"></select></label>
+        <label>涨跌幅 ≥ (%) <input id="scMinChange" type="number" step="0.5" placeholder="如 3"></label>
+        <label>涨跌幅 ≤ (%) <input id="scMaxChange" type="number" step="0.5" placeholder="如 9.7"></label>
+        <label>换手率 ≥ (%) <input id="scMinTurn" type="number" step="0.5" placeholder="如 3"></label>
+        <label>换手率 ≤ (%) <input id="scMaxTurn" type="number" step="0.5" placeholder="如 20"></label>
+        <label>PE ≥ <input id="scMinPe" type="number" step="1" placeholder="如 0"></label>
+        <label>PE ≤ <input id="scMaxPe" type="number" step="1" placeholder="如 20"></label>
+        <label>PB ≤ <input id="scMaxPb" type="number" step="0.1" placeholder="如 2"></label>
+        <label>总市值 ≥ (亿) <input id="scMinCap" type="number" step="10" placeholder="如 100"></label>
+        <label>总市值 ≤ (亿) <input id="scMaxCap" type="number" step="10" placeholder="如 800"></label>
+        <label>名称/代码包含 <input id="scKeyword" placeholder="如 煤 或 600121"></label>
+        <label>返回条数 <input id="scLimit" type="number" value="50"></label>
+        <label>扫描页数 <input id="scPages" type="number" value="3"></label>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:12px">
+        <button class="action" id="scRun">开始筛选</button>
+        <button class="action ghost" id="scReset">清空条件</button>
+      </div>
+      <div id="scMeta" class="hint" style="margin-top:8px"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>筛选结果 <span class="tag" id="scCount">—</span></h3>
+      <div id="scResults" class="loading">加载中…</div>
+    </div>
+  </section>
+
+  <section class="view" id="view-advice">
+    <div class="notice">
+      做法：先用「选股器」从全市场圈出一个池子，再对池子里的标的逐只核对知识库手册里<b>可量化</b>的前提
+      （MA20 结构 / 均线排列 / 放量确认 / 位置高低 / 止损与仓位），把满足度更高的排在前面，并附上每条判定的原文。
+      这是<b>规则一致性排序</b>，不是推荐、不预测涨跌；得分高只说明当前形态更符合手册的入场前提，随时可能因基本面消息失效。
+    </div>
+    <div class="filters" id="advicePresets" style="margin-top:14px"><span class="dim">加载中…</span></div>
+    <div class="card">
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+        <span class="dim">返回条数</span><input id="adviceLimit" type="number" value="8" style="width:72px">
+        <span class="dim">扫描页数</span><input id="advicePages" type="number" value="2" style="width:72px">
+        <button class="action" id="adviceRun">开始分析并排序</button>
+        <span id="adviceMeta" class="hint"></span>
+      </div>
+    </div>
+    <div id="adviceResults" class="advice-list" style="margin-top:14px"><div class="loading">加载中…</div></div>
+  </section>
+
+  <section class="view" id="view-guba">
+    <div class="notice" id="gubaNotice">
+      股吧是散户讨论区：内容为个人观点，不代表事实，也不构成投资建议。
+      东方财富股吧接口已做访问限制、雪球需登录态，本站改用新浪「股市汇」股吧，只用于观察散户情绪一致性（一致预期常是反向指标）。
+    </div>
+    <div class="filters" style="margin-top:14px">
+      <span class="dim">自选股快捷：</span>
+      <span class="wl-btns" id="gubaQuick"></span>
+      <input id="gubaCode" placeholder="输入 6 位代码" inputmode="numeric">
+      <button class="action" id="gubaLoad">查看股吧</button>
+    </div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3 id="gubaTitle">股吧情绪</h3>
+        <div id="gubaSentiment" class="loading">加载中…</div>
+        <h3 style="margin-top:16px">股吧热词 <span class="tag">剔除股票名与代码</span></h3>
+        <div id="gubaHotWords">—</div>
+      </div>
+      <div class="card">
+        <h3>帖子列表 <span class="tag">按情绪从高到低</span></h3>
+        <ul class="news-list" id="gubaPosts"><li class="loading">加载中…</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-analysis">
+    <div class="filters">
+      <span class="dim">自选股快捷：</span>
+      <span class="wl-btns" id="analysisQuick"></span>
+      <input id="analysisCode" placeholder="输入 6 位代码" inputmode="numeric">
+      <button class="action" id="analysisLoad">开始体检</button>
+    </div>
+    <div id="analysisNotice"></div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3 id="analysisTitle">结论</h3>
+        <div id="analysisVerdict" class="loading">加载中…</div>
+        <h3 style="margin-top:16px">技术指标</h3>
+        <div id="analysisIndicators">—</div>
+      </div>
+      <div class="card">
+        <h3>分时走势 <span class="tag">同花顺（通达信口径）</span></h3>
+        <canvas id="minuteChart" height="230"></canvas>
+        <div class="legend"><span><i style="background:#4a9eff"></i>价格</span><span><i style="background:#ffb020"></i>均价</span><span class="dim">虚线为昨收</span></div>
+        <div id="minuteMeta" class="kv" style="margin-top:14px"><dt>状态</dt><dd>加载中…</dd></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>日 K 线 <span class="tag">近 120 个交易日 · 前复权</span></h3>
+      <canvas id="klineChart" height="320"></canvas>
+      <div class="legend">
+        <span><i style="background:#ff4d4f"></i>阳线</span>
+        <span><i style="background:#17c964"></i>阴线</span>
+        <span><i style="background:#ffb020"></i>MA5</span>
+        <span><i style="background:#4a9eff"></i>MA10</span>
+        <span><i style="background:#c084fc"></i>MA20</span>
+      </div>
+      <div class="hint" id="klineMeta">加载中…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>走势分析 <span class="tag">多周期判定 · 关键价位 · 风险点</span></h3>
+      <div id="trendBox" class="loading">加载中…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>知识库规则体检 <span class="tag">8 条 · 只判断是否满足自定规则</span></h3>
+      <div class="hint" style="margin-bottom:6px">状态含义：<span class="badge ok">通过</span> 满足规则 · <span class="badge mid">警示</span> 存在疑点 · <span class="badge no">不通过</span> 违反规则 · <span class="badge">不适用</span> 数据不足</div>
+      <div id="analysisChecks" class="loading">加载中…</div>
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>个股舆情（新闻口径）</h3>
+        <div id="analysisNews">—</div>
+      </div>
+      <div class="card">
+        <h3>股吧情绪（辅助）</h3>
+        <div id="analysisGuba">—</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>相关新闻</h3>
+      <ul class="news-list" id="analysisNewsList"></ul>
+    </div>
+  </section>
+
+  <section class="view" id="view-commodity">
+    <div class="grid cols-3" id="commodityCards"></div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>棉花主连（CF）走势 <span class="tag">新浪期货日线</span></h3>
+        <canvas id="cottonChart" height="260"></canvas>
+        <div class="legend"><span><i style="background:#4a9eff"></i>收盘价</span><span><i style="background:#ffb020"></i>MA20</span></div>
+      </div>
+      <div class="card">
+        <h3>焦煤主连（JM）走势 <span class="tag">煤炭价格代理指标</span></h3>
+        <canvas id="coalChart" height="260"></canvas>
+        <div class="legend"><span><i style="background:#4a9eff"></i>收盘价</span><span><i style="background:#ffb020"></i>MA20</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>棉花 / 煤炭相关新闻</h3>
+      <ul class="news-list" id="commodityNews"><li class="loading">加载中…</li></ul>
+    </div>
+  </section>
+
+  <section class="view" id="view-coal">
+    <div class="notice">
+      权威港口库存明细（CCTD 中国煤炭市场网、环渤海动力煤价格指数）与海关分项进口数据均为付费/受限内容，无法匿名抓取
+      （海关总署页面 412、国家统计局接口 403）。本页以 <code>server/data/coal_inventory.csv</code>、
+      <code>server/data/coal_import.csv</code> 台账为准，并从新闻正文自动抽取「某港库存 xxx 万吨」「进口煤炭 xxxx 万吨」读数作为补充。
+      随包数据 source 字段标为「示例数据」的行不是真实行情，仅用于验证图表。
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>各港口煤炭库存 <span class="tag">万吨</span></h3>
+        <canvas id="coalBarChart" height="300"></canvas>
+        <div class="legend" id="coalBarLegend"></div>
+      </div>
+      <div class="card">
+        <h3>港口库存合计趋势 <span class="tag">万吨</span></h3>
+        <canvas id="coalTotalChart" height="300"></canvas>
+        <div class="legend"><span><i style="background:#4a9eff"></i>四港合计</span></div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>动力煤 5500K 价格 <span class="tag">元/吨</span></h3>
+        <canvas id="coalPriceChart" height="240"></canvas>
+      </div>
+      <div class="card">
+        <h3>库存明细表</h3>
+        <div id="coalTable" class="loading">加载中…</div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>月度煤炭进口量 <span class="tag">万吨 · 按品种</span></h3>
+        <canvas id="importChart" height="300"></canvas>
+        <div class="legend" id="importLegend"></div>
+      </div>
+      <div class="card">
+        <h3>进口月度台账 <span class="tag">环比 / 同比</span></h3>
+        <div id="importTable" class="loading">加载中…</div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>新闻抽取的库存 / 煤价读数 <span class="tag">需人工复核</span></h3>
+        <div id="coalExtract" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>导入库存数据 <span class="tag">CSV</span></h3>
+        <p class="hint">格式：<code>date,port,metric,value,unit,source</code>，例如<br>
+        <code>2026-09-28,秦皇岛港,库存,542.5,万吨,手录</code></p>
+        <textarea id="coalCsvInput" placeholder="date,port,metric,value,unit,source&#10;2026-09-28,秦皇岛港,库存,542.5,万吨,手录"></textarea>
+        <div style="display:flex; gap:10px; margin-top:10px">
+          <button class="action" id="coalImportBtn">导入并刷新图表</button>
+          <button class="action ghost" id="coalReloadBtn">重新读取台账</button>
+        </div>
+        <div id="coalImportMsg" class="hint" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>新闻抽取的进口读数 <span class="tag">需人工复核</span></h3>
+        <div id="importExtract" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>导入进口数据 <span class="tag">CSV</span></h3>
+        <p class="hint">格式：<code>period,variety,value_10kt,yoy_pct,amount_usd,source</code>，例如<br>
+        <code>2026-09,煤及褐煤,4209,-1.5,,海关总署</code></p>
+        <textarea id="importCsvInput" placeholder="period,variety,value_10kt,yoy_pct,amount_usd,source&#10;2026-09,煤及褐煤,4209,-1.5,,海关总署"></textarea>
+        <div style="display:flex; gap:10px; margin-top:10px">
+          <button class="action" id="importCsvBtn">导入并刷新图表</button>
+          <button class="action ghost" id="importReloadBtn">重新读取台账</button>
+        </div>
+        <div id="importMsg" class="hint" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-knowledge">
+    <div class="notice">
+      以下为「必读书单」33 本书（基础／进阶／高阶／通用方法／拓展阅读）的方法论学习提炼。<b>点书名即可展开该本的提要</b>，
+      默认收起以免页面过长。属于规则化笔记而非原文摘录，也未下载或分发任何受版权保护的 PDF 或电子书；
+      条目里的「阅读原文」只跳转到豆瓣书目页／微信读书／孔夫子旧书网等正版渠道，本站不提供原书内容。请把它当作交易纪律清单，而不是收益承诺。
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div class="card">
+        <h3>可执行交易手册 <span class="tag" id="playbookTag">知识库提炼</span></h3>
+        <div id="playbook" class="loading">加载中…</div>
+      </div>
+      <div class="card">
+        <h3>下单前检查清单</h3>
+        <div id="checklist" class="loading">加载中…</div>
+      </div>
+    </div>
+    <div class="book-search">
+      <input id="bookSearch" type="search" placeholder="搜索书名 / 作者 / 主题…" autocomplete="off" aria-label="搜索书目" />
+      <span class="count" id="bookSearchCount"></span>
+    </div>
+    <div class="books" id="books" style="margin-top:10px"></div>
+  </section>
+</main>
+
+<footer class="statusbar" id="statusbar">
+  <span class="sb-item" id="sbService"><span class="dim">服务检查中…</span></span>
+  <span class="sb-sep"></span>
+  <span class="sb-item" id="sbView">页签：总览</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item" id="sbData"><span class="dim">本页数据：尚未加载</span></span>
+  <button class="sb-item sb-btn" id="sbRefresh" title="立即重新拉取当前页的数据">立即刷新</button>
+  <span class="sb-sep"></span>
+  <button class="sb-item sb-btn" id="sbSelf" title="点击查看工作站自检详情">自检：未运行</button>
+  <span class="sb-sep"></span>
+  <span class="sb-item" id="sbMode"><span class="dim">窗口模式检测中…</span></span>
+  <span class="sb-spacer"></span>
+  <span class="sb-item dim" id="sbHint">Ctrl+R 刷新 · F11 全屏 · Esc 关闭菜单</span>
+  <span class="sb-item num" id="sbClock">--:--:--</span>
+</footer>
+
+<div class="modal-mask" id="selfcheckModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="selfcheckTitle">
+    <div class="modal-head">
+      <strong id="selfcheckTitle">工作站自检</strong>
+      <span class="dim" id="selfcheckMeta"></span>
+      <span class="modal-spacer"></span>
+      <button class="action ghost" id="selfcheckCopy">复制结果</button>
+      <button class="action ghost" id="selfcheckRunLocal">快速自检</button>
+      <button class="action" id="selfcheckRunFull">完整自检（联网）</button>
+      <button class="win-btn danger" id="selfcheckClose" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1.8" y1="1.8" x2="8.2" y2="8.2"></line><line x1="8.2" y1="1.8" x2="1.8" y2="8.2"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="selfcheckBody"><div class="loading">还没有运行自检，点右上角「快速自检」或「完整自检（联网）」。</div></div>
+  </div>
+</div>
+
+<div class="modal-mask" id="netModal" aria-hidden="true">
+  <div class="modal modal-narrow" role="dialog" aria-modal="true" aria-labelledby="netTitle">
+    <div class="modal-head">
+      <strong id="netTitle">手机访问这个工作站</strong>
+      <span class="dim" id="netMeta"></span>
+      <span class="modal-spacer"></span>
+      <button class="action ghost" id="netCopy">复制手机地址</button>
+      <button class="win-btn danger" id="netClose" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1.8" y1="1.8" x2="8.2" y2="8.2"></line><line x1="8.2" y1="1.8" x2="1.8" y2="8.2"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="netBody"><div class="loading">正在检测局域网地址…</div></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

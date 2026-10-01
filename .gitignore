@@ -1,0 +1,7 @@
+node_modules/
+screenshots/
+*.log
+.DS_Store
+selfcheck-report.txt
+last-error.txt
+server/data/translate-cache.json

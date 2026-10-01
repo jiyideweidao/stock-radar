@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "playwright-core": "^1.63.0"
+  },
+  "name": "stock-radar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "股民舆情与商品看板：多源财经新闻、选股器、股吧、煤炭库存与进口、个股规则化体检",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "book-to-skill": "node tools/book-to-skill.js",
+    "resolve-books": "node tools/resolve-douban.js",
+    "selftest": "node test/selftest.js",
+    "visual": "node test/visual-check.js",
+    "mobile": "node test/mobile-check.js"
+  }
+}
