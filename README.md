@@ -1,5 +1,12 @@
 # 股民舆情与商品看板（stock-radar）
 
+![license](https://img.shields.io/github/license/jiyideweidao/stock-radar)
+![node](https://img.shields.io/badge/node-%E2%89%A518-339933?logo=node.js&logoColor=white)
+![runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
+![selftest](https://img.shields.io/badge/selftest-63%2F63-brightgreen)
+![platform](https://img.shields.io/badge/platform-Windows%20%C2%B7%20Node-lightgrey)
+![stars](https://img.shields.io/github/stars/jiyideweidao/stock-radar?color=blue)
+
 一个零外部依赖（除可选的无头浏览器验收）的本地股市工作站：把 **A 股自选股行情、多源财经舆情、选股器、股吧情绪、棉花与煤炭商品走势、煤炭港口库存与月度进口台账** 聚合到一个页面，
 再用从交易知识库（33 本书）里提炼的规则引擎，对个股做可解释的「是否满足自定规则」体检。
 
@@ -36,9 +43,10 @@ npm start                  # 启动服务，默认 http://127.0.0.1:8787
 npm run selftest           # 离线自检（63 项，不依赖外网）
 npm run visual             # 可选：无头 Edge 逐页截图验收（需 playwright-core）
 npm run mobile             # 可选：412×915 安卓视口验收（溢出 / 页签栏 / 二维码真解码）
+npm run shots              # 可选：重出 docs/images/ 的界面预览图与社交预览图（SHOTS_ONLY=social 可只重出后者）
 ```
 
-主服务无第三方依赖，`npm install` 只为 `visual` 验收脚本准备（复用本机 Edge，不下载浏览器）。
+主服务无第三方依赖，`npm install` 只为 `visual` / `mobile` / `shots` 三个无头浏览器脚本准备（复用本机 Edge，不下载浏览器）。
 
 ### 桌面版（像程序一样用）
 
@@ -305,7 +313,7 @@ GET  /api/knowledge                 交易知识库（33 本书）
 
 ## 自定义
 
-- 自选股：编辑 `server/data/watchlist.json`（代码、名称、标签、关注要点）。
+- 自选股：编辑 `server/data/watchlist.json`（代码、名称、标签、关注要点）。仓库自带的是**示例清单**（贵州茅台／中国平安／宁德时代／招商银行／比亚迪），换成自己的股票直接改这个文件，刷新页面即可生效。
 - 情绪词表：编辑 `server/lib/sentiment.js` 的 `BULLISH` / `BEARISH`；股吧口语词在 `server/sources/guba.js`。
 - 商品品种：编辑 `server/sources/futures.js` 的 `COMMODITIES`。
 - 主题词表：编辑 `server/lib/feed.js` 的 `TOPIC_KEYWORDS` 与 `server/sources/news.js` 的 `PROBES`。
@@ -333,12 +341,14 @@ stock-radar/
 ├── desktop/                   桌面启动器：启动 / 停止 / 自检 / 图标 / 窗口代理（window-agent.ps1）、
 │                              允许手机访问.ps1（防火墙放行 TCP 8787，可 -Remove 撤销）
 ├── docs/books/                交易知识库的书籍学习提要（33 本，由 tools/book-to-skill.js 生成）
-├── docs/images/               README 里的界面预览图（1600×1000 固定视口截图，
-│                              原始整页截图由 npm run visual 产出到 screenshots/，不入库）
+├── docs/images/               README 界面预览图 + GitHub 社交预览图
+│                              （1600×1000 桌面 / 824×1830 手机 / 1280×640 社交卡片，由 npm run shots 生成；
+│                              整页验收截图由 npm run visual 产出到 screenshots/，不入库）
 ├── tools/book-to-skill.js     把书单提炼为 knowledge.json 与 docs/books/ 的生成脚本
 ├── tools/resolve-douban.js    把每本书解析到豆瓣具体书目页，产出 book-links.json（只取公开元数据）
 └── test/                      selftest.js（63 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
-                               mobile-check.js（412×915 安卓视口：溢出 / 页签栏 / 二维码真解码）
+                               mobile-check.js（412×915 安卓视口：溢出 / 页签栏 / 二维码真解码）、
+                               readme-shots.js（生成 README 预览图与社交预览图）
 ```
 
 ## 常见故障

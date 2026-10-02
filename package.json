@@ -13,7 +13,8 @@
     "resolve-books": "node tools/resolve-douban.js",
     "selftest": "node test/selftest.js",
     "visual": "node test/visual-check.js",
-    "mobile": "node test/mobile-check.js"
+    "mobile": "node test/mobile-check.js",
+    "shots": "node test/readme-shots.js"
   },
   "license": "MIT"
 }

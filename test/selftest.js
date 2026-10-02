@@ -187,9 +187,9 @@ check('口语化看多 / 看空词识别', () => {
   assert.ok(guba.gubaSentiment('垃圾股，割肉跑路').score < 0);
 });
 check('热词统计剔除股票名片段与纯数字', () => {
-  const words = guba.topWords(['郑州煤电明天要涨停', '郑州煤电又是涨停', '600121 明天涨停'], 10, '郑州煤电');
+  const words = guba.topWords(['贵州茅台明天要涨停', '贵州茅台又是涨停', '600519 明天涨停'], 10, '贵州茅台');
   assert.ok(words.some((w) => w.word === '涨停' && w.count >= 3), JSON.stringify(words));
-  assert.ok(!words.some((w) => w.word.indexOf('煤电') >= 0 || w.word.indexOf('郑州') >= 0), JSON.stringify(words));
+  assert.ok(!words.some((w) => w.word.indexOf('茅台') >= 0 || w.word.indexOf('贵州') >= 0), JSON.stringify(words));
 });
 
 console.log('煤炭进口抽取');

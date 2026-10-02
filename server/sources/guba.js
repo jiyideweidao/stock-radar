@@ -46,7 +46,7 @@ function gubaSentiment(text) {
 const REF = 'https://guba.sina.com.cn/';
 const BASE = 'https://guba.sina.com.cn/';
 
-/** 股票代码 -> 新浪股吧代码（sh600121 / sz002212） */
+/** 股票代码 -> 新浪股吧代码（sh600519 / sz300750） */
 function toGubaCode(code) {
   const c = String(code).replace(/\D/g, '');
   return (/^(6|9|5)/.test(c) ? 'sh' : 'sz') + c;
@@ -118,7 +118,7 @@ function topWords(titles, limit = 20, boardName = '') {
   for (const title of titles) {
     const clean = String(title).replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, ' ');
     for (const seg of clean.split(/\s+/)) {
-      // 纯字母/数字片段（如 SH600121、600、00）一律丢弃
+      // 纯字母/数字片段（如 SH600519、600、00）一律丢弃
       if (!/[\u4e00-\u9fa5]/.test(seg)) continue;
       const len = seg.length;
       for (let n = 2; n <= 4; n += 1) {

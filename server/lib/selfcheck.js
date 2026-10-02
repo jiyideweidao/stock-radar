@@ -347,7 +347,7 @@ const GROUPS = [
         name: '选股建议 / 走势分析接口',
         level: 'full',
         async run() {
-          const trend = await fetchJson(BASE + '/api/trend/002212', 30000);
+          const trend = await fetchJson(BASE + '/api/trend/600519', 30000);
           if (trend.status !== 200 || !trend.json) throw new Error('/api/trend 异常（' + trend.status + '）');
           if (!trend.json.ready) throw new Error('/api/trend 未就绪：' + (trend.json.error || ''));
           const adv = await fetchJson(BASE + '/api/advice?preset=momentum&limit=3&pages=1', 90000);
@@ -356,7 +356,7 @@ const GROUPS = [
           if (!adv.json.scanned) throw new Error('/api/advice 没有扫描到任何行情（数据源可能不可用）');
           if (!picks) throw new Error('/api/advice 扫描 ' + adv.json.scanned + ' 只但没有产出候选');
           const hz = trend.json.horizons || { short: {}, mid: {} };
-          return '天融信走势 短期' + (hz.short.verdict || '—') + ' / 中期' + (hz.mid.verdict || '—') +
+          return '贵州茅台走势 短期' + (hz.short.verdict || '—') + ' / 中期' + (hz.mid.verdict || '—') +
             ' · 选股建议 ' + picks + ' 条候选（扫描 ' + adv.json.scanned + ' 只' + (adv.json.relaxed ? '，已放宽条件' : '') + '）';
         }
       },
@@ -368,9 +368,9 @@ const GROUPS = [
           if (inv.status !== 200) throw new Error('/api/coal/inventory 返回 ' + inv.status);
           const imp = await fetchJson(BASE + '/api/coal/import', 20000);
           if (imp.status !== 200) throw new Error('/api/coal/import 返回 ' + imp.status);
-          const gb = await fetchJson(BASE + '/api/guba/600121?limit=10', 25000);
+          const gb = await fetchJson(BASE + '/api/guba/600036?limit=10', 25000);
           const posts = gb.json && gb.json.posts ? gb.json.posts.length : 0;
-          return '库存 ' + inv.json.ports.length + ' 港 · 进口 ' + imp.json.groups.length + ' 品种 · 郑州煤电股吧 ' + posts + ' 帖';
+          return '库存 ' + inv.json.ports.length + ' 港 · 进口 ' + imp.json.groups.length + ' 品种 · 招商银行股吧 ' + posts + ' 帖';
         }
       }
     ]
@@ -449,22 +449,22 @@ const GROUPS = [
         name: '同花顺个股行情 / 日线',
         level: 'full',
         async run() {
-          const q = await withTimeout(ths.fetchQuote('002212'), 20000, '同花顺行情');
-          const k = await withTimeout(ths.fetchDaily('002212', 260), 25000, '同花顺日线');
-          if (!q || !q.price) throw new Error('天融信实时行情为空');
+          const q = await withTimeout(ths.fetchQuote('600519'), 20000, '同花顺行情');
+          const k = await withTimeout(ths.fetchDaily('600519', 260), 25000, '同花顺日线');
+          if (!q || !q.price) throw new Error('贵州茅台实时行情为空');
           const bars = (k && k.rows) || [];
           if (bars.length < 120) throw new Error('日线只有 ' + bars.length + ' 根，不足以算中期指标');
-          return '天融信 ' + q.price + ' · 日线 ' + bars.length + ' 根（最近 ' + bars[bars.length - 1].date + '）';
+          return '贵州茅台 ' + q.price + ' · 日线 ' + bars.length + ' 根（最近 ' + bars[bars.length - 1].date + '）';
         }
       },
       {
         name: '新浪股吧',
         level: 'full',
         async run() {
-          const board = await withTimeout(guba.fetchBoard('600121', 20), 25000, '股吧');
+          const board = await withTimeout(guba.fetchBoard('600036', 20), 25000, '股吧');
           const n = board && board.posts ? board.posts.length : 0;
-          if (!n) throw new Error('郑州煤电股吧没有取到帖子');
-          return '郑州煤电股吧 ' + n + ' 帖 · 情绪分 ' + (board.sentiment ? board.sentiment.score : '—');
+          if (!n) throw new Error('招商银行股吧没有取到帖子');
+          return '招商银行股吧 ' + n + ' 帖 · 情绪分 ' + (board.sentiment ? board.sentiment.score : '—');
         }
       },
       {

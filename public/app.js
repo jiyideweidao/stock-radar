@@ -1202,7 +1202,7 @@ async function renderQuickPicks(sel, onPick) {
 async function initGuba() {
   await renderQuickPicks('#gubaQuick', (code) => loadGuba(code));
   if (state.gubaCode) return;
-  const first = (state.watchlist && state.watchlist.stocks[0] && state.watchlist.stocks[0].code) || '600121';
+  const first = (state.watchlist && state.watchlist.stocks[0] && state.watchlist.stocks[0].code) || '600519';
   loadGuba(first);
 }
 
@@ -1266,7 +1266,7 @@ async function initAnalysis() {
   let first = null;
   try { first = localStorage.getItem(ANALYSIS_CODE_KEY); } catch (err) { /* 隐私模式下忽略 */ }
   if (!/^\d{6}$/.test(String(first || ''))) {
-    first = (state.watchlist && state.watchlist.stocks[0] && state.watchlist.stocks[0].code) || '002212';
+    first = (state.watchlist && state.watchlist.stocks[0] && state.watchlist.stocks[0].code) || '600519';
   }
   openAnalysis(first);
 }
