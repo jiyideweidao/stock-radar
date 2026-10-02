@@ -165,6 +165,43 @@ const TABS = [
     errors.push('EMPTY: 自选股行情表没有数据行');
   }
 
+  // ---------- 自选股增删改：界面上真的能加一只、再删掉 ----------
+  // 策略：临时加一只再删掉，跑完自选股必须和开始前完全一致。
+  await page.click('#tabs button[data-view="stocks"]');
+  await page.waitForTimeout(2500);
+  const wlBefore = (await page.$$('#stockTable tbody tr')).length;
+  await page.fill('#wlInput', '招商南油');
+  await page.click('#wlSearchBtn');
+  await page.waitForTimeout(7000);
+  const cards = await page.$$('#wlResults .wl-result');
+  console.log('[自选股选股] 搜索「招商南油」命中 ' + cards.length + ' 条');
+  if (!cards.length) {
+    errors.push('WATCHLIST: 名称搜索没有结果（/api/stock/lookup 或东财 suggest 挂了）');
+  } else {
+    const code = await cards[0].getAttribute('data-code');
+    await cards[0].$eval('.wl-add', (b) => b.click());
+    await page.waitForTimeout(8000);
+    const afterAdd = (await page.$$('#stockTable tbody tr')).length;
+    const added = await page.$('#stockTable tbody tr[data-code="' + code + '"]');
+    console.log('  加入 ' + code + '：行数 ' + wlBefore + ' -> ' + afterAdd + '，新行存在=' + Boolean(added));
+    if (!added || afterAdd !== wlBefore + 1) errors.push('WATCHLIST: 点「加入自选」没生效（' + wlBefore + ' -> ' + afterAdd + '）');
+    await page.screenshot({ path: path.join(OUT, 'stock-watchlist-add.png'), fullPage: true });
+
+    // 删除是「点两次」的设计：第一次只变成确认态，第二次才真删
+    const delSel = '#stockTable tbody tr[data-code="' + code + '"] .wl-ops button[data-op="del"]';
+    await page.click(delSel);
+    await page.waitForTimeout(300);
+    const armed = (await page.textContent(delSel)).trim();
+    if (armed !== '确认删除') errors.push('WATCHLIST: 删除按钮没有二次确认（当前「' + armed + '」）');
+    await page.click(delSel);
+    await page.waitForTimeout(8000);
+    const afterDel = (await page.$$('#stockTable tbody tr')).length;
+    const stillThere = await page.$('#stockTable tbody tr[data-code="' + code + '"]');
+    console.log('  删除 ' + code + '：行数 ' + afterAdd + ' -> ' + afterDel + '，二次确认=' + armed);
+    if (afterDel !== wlBefore) errors.push('WATCHLIST: 删除后自选股没回到原样（' + wlBefore + ' -> ' + afterDel + '）');
+    if (stillThere) errors.push('WATCHLIST: 删除后那一行还在');
+  }
+
   console.log('');
   console.log('控制台错误数: ' + errors.length);
   errors.slice(0, 20).forEach((e) => console.log('  ' + e));

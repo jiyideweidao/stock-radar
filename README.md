@@ -3,7 +3,7 @@
 ![license](https://img.shields.io/github/license/jiyideweidao/stock-radar)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-339933?logo=node.js&logoColor=white)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
-![selftest](https://img.shields.io/badge/selftest-63%2F63-brightgreen)
+![selftest](https://img.shields.io/badge/selftest-66%2F66-brightgreen)
 ![platform](https://img.shields.io/badge/platform-Windows%20%C2%B7%20Node-lightgrey)
 ![stars](https://img.shields.io/github/stars/jiyideweidao/stock-radar?color=blue)
 
@@ -40,7 +40,7 @@
 ```bash
 cd stock-radar
 npm start                  # 启动服务，默认 http://127.0.0.1:8787
-npm run selftest           # 离线自检（63 项，不依赖外网）
+npm run selftest           # 离线自检（66 项，不依赖外网）
 npm run visual             # 可选：无头 Edge 逐页截图验收（需 playwright-core）
 npm run mobile             # 可选：412×915 安卓视口验收（溢出 / 页签栏 / 二维码真解码）
 npm run shots              # 可选：重出 docs/images/ 的界面预览图与社交预览图（SHOTS_ONLY=social 可只重出后者）
@@ -162,7 +162,7 @@ npm run shots              # 可选：重出 docs/images/ 的界面预览图与�
 | 页签 | 内容 |
 | --- | --- |
 | 总览 | 指数条、五只自选股卡片、市场舆情温度（含主题条形榜）、关注品种（棉花/焦煤/焦炭：最新·涨跌·最高·最低·持仓）、煤炭库存速览、全市场涨跌家数（含涨/平/跌分布条）、**自选股分时图**（5 只当日涨跌幅同图对比，0% 虚线为昨收基准）、板块涨幅榜、最新快讯 |
-| 自选股 | 行情表 + **自选股主力资金净流入榜**（东方财富当日累计，红=流入／绿=流出，含主力净占比，与行情表并排一屏看完）→ 点击任意一行打开「个股体检」 |
+| 自选股 | **选股与设置**：填 6 位代码或名称／拼音（如 `茅台`、`gzmt`）→ 查询 → 加入自选；每行可 **↑↓ 调序 / 编辑标签与关注要点 / 删除（点两次确认）**，改动直接写回 `server/data/watchlist.json`。行情表 + **自选股主力资金净流入榜**（东方财富当日累计，红=流入／绿=流出，含主力净占比），点击任意一行打开「个股体检」 |
 | 舆情新闻 | 多源新闻聚合，按 棉花／煤炭／大宗商品／宏观／市场资金 过滤，逐条标注情绪分与命中词 |
 | **数据源浏览** | **按你点名的源逐个浏览**（财联社／东方财富 7×24／同花顺／新浪财经／华尔街见闻／金十数据），并如实列出「点名源 vs 实际接入状态」对照表 |
 | **选股器** | 6 个内置预设（强势动量／超跌观察／低估值／高换手活跃／成交额榜／权重蓝筹）+ 自定义条件（涨跌幅、换手、PE、PB、市值、名称），结果可点击跳转体检 |
@@ -279,6 +279,11 @@ GET  /api/overview                  指数 + 自选股 + 关键商品 + 煤炭/�
 GET  /api/embed                     可嵌入的第三方页面白名单（目前只有金融界三个页面）
 GET  /api/embed/:id/preflight       探测该页现在能不能被 iframe 嵌入（含对方禁止嵌入的原因）
 GET  /api/watchlist                 自选股配置
+GET  /api/stock/lookup?q=           选股查询：6 位代码走实时行情，其余走名称／拼音联想（东方财富 suggest）
+POST /api/watchlist/add             {"code":"600519","name":"","tags":"","watchPoints":""}（name 留空自动补）
+POST /api/watchlist/update          {"code":"600519","name":"","tags":"","watchPoints":""}
+POST /api/watchlist/move            {"code":"600519","delta":-1}（-1 上移 / 1 下移）
+POST /api/watchlist/remove          {"code":"600519"}
 GET  /api/stock/:code               个股行情 + K线 + 均线 + 技术面 + 舆情 + 新闻
 GET  /api/analysis/:code            个股规则化体检（8 条规则 + 指标 + 舆情 + 股吧 + 资金流）
 GET  /api/guba/:code                股吧帖子、情绪聚合、热词
@@ -313,7 +318,7 @@ GET  /api/knowledge                 交易知识库（33 本书）
 
 ## 自定义
 
-- 自选股：编辑 `server/data/watchlist.json`（代码、名称、标签、关注要点）。仓库自带的是**示例清单**（贵州茅台／中国平安／宁德时代／招商银行／比亚迪），换成自己的股票直接改这个文件，刷新页面即可生效。
+- 自选股：**直接在「自选股」页里增删改**——填代码或名称查询后加入，行内 ↑↓ 调序、编辑标签与关注要点、点两次删除；写的是 `server/data/watchlist.json`（先写 `.tmp` 再改名，不怕写到一半断电）。也可以手改这个文件。仓库自带的是**示例清单**（贵州茅台／中国平安／宁德时代／招商银行／比亚迪），最多 30 只。
 - 情绪词表：编辑 `server/lib/sentiment.js` 的 `BULLISH` / `BEARISH`；股吧口语词在 `server/sources/guba.js`。
 - 商品品种：编辑 `server/sources/futures.js` 的 `COMMODITIES`。
 - 主题词表：编辑 `server/lib/feed.js` 的 `TOPIC_KEYWORDS` 与 `server/sources/news.js` 的 `PROBES`。
@@ -346,7 +351,7 @@ stock-radar/
 │                              整页验收截图由 npm run visual 产出到 screenshots/，不入库）
 ├── tools/book-to-skill.js     把书单提炼为 knowledge.json 与 docs/books/ 的生成脚本
 ├── tools/resolve-douban.js    把每本书解析到豆瓣具体书目页，产出 book-links.json（只取公开元数据）
-└── test/                      selftest.js（63 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
+└── test/                      selftest.js（66 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
                                mobile-check.js（412×915 安卓视口：溢出 / 页签栏 / 二维码真解码）、
                                readme-shots.js（生成 README 预览图与社交预览图）
 ```

@@ -654,22 +654,251 @@ function renderOverview(data) {
 
 /* --------------------------------- 自选股 --------------------------------- */
 
+/* 最近一次渲染出来的自选股，供「查询结果里是否已在自选」判断用 */
+let lastWatchlist = [];
+
+function watchItem(code) {
+  return lastWatchlist.find((s) => s.code === code) || null;
+}
+
 function renderStockTable(list) {
-  const rows = (list.watchlist || []).map((s) => {
+  const items = list.watchlist || [];
+  lastWatchlist = items;
+
+  const count = $('#watchCount');
+  if (count) count.textContent = items.length ? items.length + ' 只 · 可增删改' : '还没添加';
+
+  const rows = items.map((s, i) => {
     const q = s.quote || {};
+    const tags = (s.tags || []).map((t) => '<span class="tag-mini">' + esc(t) + '</span>').join('');
     return (
       '<tr data-code="' + s.code + '"><td><b>' + esc(s.name) + '</b> <span class="dim">' + s.code + '</span></td>' +
       '<td class="num">' + fmt.num(q.price, 2) + '</td>' +
       '<td class="num ' + fmt.cls(q.changePct) + '">' + fmt.pct(q.changePct) + '</td>' +
       '<td class="num">' + fmt.big(q.amountYuan) + '</td>' +
       '<td class="num">' + fmt.num(q.turnoverRate, 2) + '%</td>' +
-      '<td class="num">' + fmt.num(q.volumeRatio, 2) + '</td></tr>'
+      '<td class="num">' + fmt.num(q.volumeRatio, 2) + '</td>' +
+      '<td class="wl-tags">' + (tags || '<span class="dim">—</span>') + '</td>' +
+      '<td class="wl-ops">' +
+        '<button data-op="up" title="上移"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button data-op="down" title="下移"' + (i === items.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button data-op="edit" title="编辑标签与关注要点">编辑</button>' +
+        '<button data-op="del" class="danger" title="从自选股删除">删除</button>' +
+      '</td></tr>'
     );
   }).join('');
-  $('#stockTable').innerHTML =
-    '<table><thead><tr><th>名称</th><th>最新</th><th>涨跌幅</th><th>成交额</th><th>换手</th><th>量比</th></tr></thead><tbody>' +
-    rows + '</tbody></table>';
-  $$('#stockTable tbody tr').forEach((tr) => tr.addEventListener('click', () => openAnalysis(tr.dataset.code)));
+
+  $('#stockTable').innerHTML = items.length
+    ? '<table><thead><tr><th>名称</th><th>最新</th><th>涨跌幅</th><th>成交额</th><th>换手</th><th>量比</th><th>标签</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    : '<div class="hint">自选股现在是空的。在上面输入 6 位代码或名称，点「查询」就能加回来。</div>';
+
+  $$('#stockTable tbody tr').forEach((tr) => {
+    const code = tr.dataset.code;
+    tr.addEventListener('click', () => openAnalysis(code));
+    tr.querySelectorAll('.wl-ops button').forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();   // 别把「点行开体检」也触发了
+        const op = btn.dataset.op;
+        if (op === 'del') armDeleteButton(btn, code);
+        else if (op === 'edit') openWatchEditor(code);
+        else moveWatchStock(code, op === 'up' ? -1 : 1);
+      });
+    });
+  });
+}
+
+/* ---------------------------------------------------------------
+ * 自选股增删改：写的是 server/data/watchlist.json
+ * 删除做「点两次」而不是 confirm()——应用窗口里不弹阻塞式对话框
+ * --------------------------------------------------------------- */
+
+function watchError(err) {
+  const msg = String((err && err.message) || err);
+  if (/Failed to fetch|连不上本地服务/.test(msg)) return '连不上本地服务，改不动自选股';
+  return msg;
+}
+
+async function watchPost(action, payload) {
+  return api('/api/watchlist/' + action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+/** 改完自选股要把各页缓存标记清掉，否则总览/股吧还拿着旧名单。 */
+async function afterWatchlistChange(message, wl) {
+  if (wl && Array.isArray(wl.stocks)) {
+    lastWatchlist = wl.stocks;
+    state.watchlist = { stocks: wl.stocks, settings: wl.settings };
+  } else {
+    state.watchlist = null;
+  }
+  loaded.overview = { at: 0, busy: false, error: null };
+  loaded.stocks = { at: 0, busy: false, error: null };
+  viewState('stocks').busy = false;
+  loaded.guba = { at: 0, busy: false, error: null };
+  if (message) toast(message, 'ok');
+  await loadView('stocks', { force: true });
+  renderQuickPicks('#gubaQuick', (c) => loadGuba(c));
+  renderQuickPicks('#analysisQuick', (c) => openAnalysis(c));
+  if (activeViewName() === 'overview') loadView('overview', { force: true });
+}
+
+/** 删除按钮：第一次点变成「确认删除」，3 秒内再点才真删。 */
+function armDeleteButton(btn, code) {
+  if (btn.dataset.armed === '1') {
+    btn.dataset.armed = '';
+    removeWatchStock(code);
+    return;
+  }
+  btn.dataset.armed = '1';
+  btn.classList.add('armed');
+  btn.textContent = '确认删除';
+  setTimeout(() => {
+    if (btn.isConnected && btn.dataset.armed === '1') {
+      btn.dataset.armed = '';
+      btn.classList.remove('armed');
+      btn.textContent = '删除';
+    }
+  }, 3000);
+}
+
+async function removeWatchStock(code) {
+  const item = watchItem(code);
+  try {
+    const res = await watchPost('remove', { code: code });
+    closeWatchResults();
+    await afterWatchlistChange('已从自选股删除 ' + (item ? item.name + ' ' : '') + code, res.watchlist);
+  } catch (err) {
+    toast('删除失败：' + watchError(err), 'err');
+  }
+}
+
+async function addWatchStock(code, name) {
+  try {
+    const res = await watchPost('add', { code: code, name: name || '' });
+    closeWatchResults();
+    const input = $('#wlInput');
+    if (input) input.value = '';
+    await afterWatchlistChange('已加入自选：' + (name ? name + ' ' : '') + code, res.watchlist);
+  } catch (err) {
+    toast('加入失败：' + watchError(err), 'err');
+  }
+}
+
+async function moveWatchStock(code, delta) {
+  try {
+    const res = await watchPost('move', { code: code, delta: delta });
+    await afterWatchlistChange('', res.watchlist);
+  } catch (err) {
+    toast('调整顺序失败：' + watchError(err), 'err');
+  }
+}
+
+let watchEditCode = null;
+
+function openWatchEditor(code) {
+  const item = watchItem(code);
+  if (!item) { toast('自选股里没有 ' + code, 'err'); return; }
+  watchEditCode = code;
+  $('#wlModalMeta').textContent = item.name + ' ' + item.code;
+  $('#wlNameInput').value = item.name || '';
+  $('#wlTagsInput').value = (item.tags || []).join(', ');
+  $('#wlPointsInput').value = (item.watchPoints || []).join('\n');
+  $('#wlModalHint').innerHTML = '标签最多 8 个（每个 ≤16 字），关注要点最多 10 条（每条 ≤60 字）。标签会显示在上表的「标签」列和总览卡片上。';
+  const m = $('#wlModal');
+  m.classList.add('open');
+  m.setAttribute('aria-hidden', 'false');
+  $('#wlNameInput').focus();
+}
+
+function closeWatchEditor() {
+  const m = $('#wlModal');
+  if (!m) return;
+  m.classList.remove('open');
+  m.setAttribute('aria-hidden', 'true');
+  watchEditCode = null;
+}
+
+async function saveWatchEditor() {
+  if (!watchEditCode) return;
+  const code = watchEditCode;
+  try {
+    const res = await watchPost('update', {
+      code: code,
+      name: $('#wlNameInput').value,
+      tags: $('#wlTagsInput').value,
+      watchPoints: $('#wlPointsInput').value
+    });
+    closeWatchEditor();
+    await afterWatchlistChange('已保存 ' + code + ' 的设置', res.watchlist);
+  } catch (err) {
+    $('#wlModalHint').innerHTML = '<span class="error">保存失败：' + esc(watchError(err)) + '</span>';
+  }
+}
+
+/* ----------------------------- 选股（查询 + 加入） ----------------------------- */
+
+let watchSearchBusy = false;
+
+function closeWatchResults() {
+  const box = $('#wlResults');
+  if (!box) return;
+  box.hidden = true;
+  box.innerHTML = '';
+}
+
+async function searchWatchStock() {
+  const box = $('#wlResults');
+  const input = $('#wlInput');
+  const keyword = String((input && input.value) || '').trim();
+  if (!keyword) { toast('先填 6 位代码或名称关键字', 'warn'); return; }
+  if (watchSearchBusy) return;
+
+  watchSearchBusy = true;
+  const btn = $('#wlSearchBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '查询中…'; }
+  box.hidden = false;
+  box.innerHTML = '<div class="loading">正在查询「' + esc(keyword) + '」…</div>';
+  try {
+    const data = await api('/api/stock/lookup?q=' + encodeURIComponent(keyword), { timeoutMs: 60000 });
+    renderWatchResults(data);
+  } catch (err) {
+    box.innerHTML = '<div class="error">查询失败：' + esc(watchError(err)) + '</div>';
+  } finally {
+    watchSearchBusy = false;
+    if (btn) { btn.disabled = false; btn.textContent = '查询'; }
+  }
+}
+
+function renderWatchResults(data) {
+  const box = $('#wlResults');
+  const items = data.results || [];
+  if (!items.length) {
+    box.innerHTML = '<div class="hint">没搜到「' + esc(data.query) + '」。换个关键字，或者直接填 6 位代码。</div>';
+    return;
+  }
+  const mine = new Set(lastWatchlist.map((s) => s.code));
+  box.innerHTML =
+    '<div class="wl-results-head">' + (data.mode === 'code' ? '代码精确查询' : '名称搜索') +
+    ' · ' + items.length + ' 条' + (data.mode === 'code' ? '' : '（按代码或名称逐个加入）') + '</div>' +
+    '<div class="wl-results-list">' +
+    items.map((r) => (
+      '<div class="wl-result" data-code="' + r.code + '" data-name="' + esc(r.name) + '">' +
+      '<b>' + esc(r.name) + '</b> <span class="dim">' + r.code + '</span>' +
+      '<span class="num ' + fmt.cls(r.changePct) + '">' + fmt.pct(r.changePct) + '</span>' +
+      '<span class="num dim">' + fmt.num(r.price, 2) + '</span>' +
+      (mine.has(r.code)
+        ? '<span class="tag-mini">已在自选</span>'
+        : '<button class="action wl-add">加入自选</button>') +
+      '</div>'
+    )).join('') +
+    '</div>';
+  box.querySelectorAll('.wl-add').forEach((b) => b.addEventListener('click', () => {
+    const row = b.closest('.wl-result');
+    addWatchStock(row.dataset.code, row.dataset.name);
+  }));
 }
 
 /** 自选股页的「主力资金」：数据来自 /api/market 的 fundFlow（东方财富当日累计，已按自选股口径取回）。 */
@@ -2547,6 +2776,19 @@ async function switchView(name) {
 
 function bindEvents() {
   $$('#tabs button').forEach((b) => b.addEventListener('click', () => switchView(b.dataset.view)));
+
+  // 自选股：查询 / 加入 / 编辑弹窗
+  const wlInput = $('#wlInput');
+  if (wlInput) wlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchWatchStock(); });
+  if ($('#wlSearchBtn')) $('#wlSearchBtn').addEventListener('click', () => searchWatchStock());
+  if ($('#wlSaveBtn')) $('#wlSaveBtn').addEventListener('click', () => saveWatchEditor());
+  if ($('#wlCloseBtn')) $('#wlCloseBtn').addEventListener('click', () => closeWatchEditor());
+  if ($('#wlModal')) $('#wlModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeWatchEditor(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const m = $('#wlModal');
+    if (m && m.classList.contains('open')) closeWatchEditor();
+  });
 
   $$('#newsFilters button[data-topic]').forEach((b) => {
     b.addEventListener('click', () => {

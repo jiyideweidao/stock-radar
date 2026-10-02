@@ -162,9 +162,14 @@
   <section class="view" id="view-stocks">
     <div class="grid cols-2">
       <div class="card">
-        <h3>自选股行情 <span class="tag">点击任意一行打开「个股体检」</span></h3>
+        <h3>自选股行情 <span class="tag" id="watchCount"></span></h3>
+        <div class="wl-tools">
+          <input id="wlInput" type="text" placeholder="输入 6 位代码或名称，如 600519 / 茅台" autocomplete="off" spellcheck="false">
+          <button class="action" id="wlSearchBtn">查询</button>
+        </div>
+        <div id="wlResults" class="wl-results" hidden></div>
         <div id="stockTable" class="loading">加载中…</div>
-        <div class="hint" style="margin-top:10px">本页每 30 秒自动刷新一次。点某一行会打开「个股体检」——那里有日 K 线、分时走势、技术指标、8 条规则的逐条校验，以及个股舆情和相关新闻。</div>
+        <div class="hint" style="margin-top:10px">每行后面的「编辑 / 删除 / ↑ / ↓」就是你的自选股设置，改完立刻写入 <code>server/data/watchlist.json</code>，重启也不丢；点某一行会打开「个股体检」。</div>
       </div>
       <div class="card">
         <h3>自选股主力资金 <span class="tag">东方财富 · 当日累计</span></h3>
@@ -544,6 +549,26 @@
       </button>
     </div>
     <div class="modal-body" id="netBody"><div class="loading">正在检测局域网地址…</div></div>
+  </div>
+</div>
+
+<div class="modal-mask" id="wlModal" aria-hidden="true">
+  <div class="modal modal-narrow" role="dialog" aria-modal="true" aria-labelledby="wlModalTitle">
+    <div class="modal-head">
+      <strong id="wlModalTitle">编辑自选股</strong>
+      <span class="dim" id="wlModalMeta"></span>
+      <span class="modal-spacer"></span>
+      <button class="action" id="wlSaveBtn">保存</button>
+      <button class="win-btn danger" id="wlCloseBtn" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1.8" y1="1.8" x2="8.2" y2="8.2"></line><line x1="8.2" y1="1.8" x2="1.8" y2="8.2"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="wl-field"><span>名称</span><input id="wlNameInput" type="text" maxlength="16"></label>
+      <label class="wl-field"><span>标签</span><input id="wlTagsInput" type="text" placeholder="逗号分隔，最多 8 个，如：白酒, 消费, 沪深300"></label>
+      <label class="wl-field"><span>关注要点</span><textarea id="wlPointsInput" rows="6" placeholder="每行一条，最多 10 条，如：批发价与终端动销"></textarea></label>
+      <div class="hint" id="wlModalHint"></div>
+    </div>
   </div>
 </div>
 

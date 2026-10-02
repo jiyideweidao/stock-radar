@@ -280,6 +280,53 @@ input::placeholder { color: #5c6b86; }
 .wl-btns button:hover { border-color: var(--accent); color: var(--text); }
 .wl-btns button.static { cursor: default; }
 
+/* ---------- 自选股：选股工具条 / 查询结果 / 行内操作 / 编辑弹窗 ---------- */
+.wl-tools { display: flex; gap: 8px; margin-bottom: 10px; }
+.wl-tools input { flex: 1; min-width: 0; }
+
+.wl-results {
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-soft);
+  padding: 10px; margin-bottom: 10px;
+}
+.wl-results-head { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.wl-results-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.wl-result {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg-elev);
+}
+.wl-result > b { font-weight: 600; }
+/* 第一个数字列把整组推到右边，后面的数字列不再各自撑开 */
+.wl-result > .num { margin-left: auto; }
+.wl-result > .num ~ .num { margin-left: 0; }
+.wl-result .wl-add { padding: 3px 12px; font-size: 12px; }
+
+.tag-mini {
+  display: inline-block; font-size: 11px; line-height: 18px; color: var(--text-dim);
+  border: 1px solid var(--line); border-radius: 99px; padding: 0 7px; margin: 1px 4px 1px 0;
+}
+
+#stockTable { min-width: 0; }
+#stockTable .table-scroll { overflow-x: auto; max-width: 100%; }
+#stockTable table { min-width: 620px; }
+
+#stockTable td.wl-ops { white-space: nowrap; text-align: right; }
+.wl-ops button {
+  background: var(--bg-elev); border: 1px solid var(--line); color: var(--text-dim);
+  border-radius: 6px; padding: 2px 7px; font-size: 12px; line-height: 1.5; cursor: pointer; margin-left: 4px;
+}
+.wl-ops button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.wl-ops button:disabled { opacity: .3; cursor: default; }
+.wl-ops button.danger:hover { border-color: var(--up); color: var(--up); }
+.wl-ops button.armed { background: var(--up); border-color: var(--up); color: #fff; }
+
+.wl-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+.wl-field input, .wl-field textarea { width: 100%; min-width: 0; font: 13px/1.5 inherit; }
+.wl-field textarea {
+  background: var(--bg); color: var(--text); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 10px; resize: vertical;
+}
+.wl-field textarea:focus { outline: none; border-color: var(--accent); }
+
 .mini-table th, .mini-table td { padding: 6px 6px; }
 .mini-table td:last-child, .mini-table th:last-child { text-align: right; }
 tfoot td { color: var(--text-dim); }
@@ -632,4 +679,12 @@ body { padding-bottom: 38px; }
     bottom: calc(var(--tabbar-h) + var(--safe-b) + 38px);
   }
   .toast { max-width: none; }
+
+  /* ---------- 自选股：行内小按钮 / 选股工具条 ---------- */
+  .wl-ops button { min-height: 30px; padding: 2px 9px; margin-left: 3px; }
+  .wl-result { flex-wrap: wrap; }
+  .wl-result .wl-add { min-height: 34px; }
+  .wl-tools { flex-wrap: wrap; }
+  .wl-tools input { flex: 1 1 160px; }
+  .wl-tools button { min-height: 42px; }
 }

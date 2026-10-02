@@ -407,6 +407,82 @@ check('批量规则上下文：舆情/股吧/资金流三条如实判为不适�
   assert.ok(checks.every((c) => c.label && c.detail));
 });
 
+console.log('自选股增删改');
+check('自选股代码校验：6 位数字、能去前缀，非法输入直接拦下', () => {
+  const wl = require('../server/lib/watchlist');
+  assert.strictEqual(wl.normalizeCode('600519'), '600519');
+  assert.strictEqual(wl.normalizeCode(600519), '600519');
+  assert.strictEqual(wl.normalizeCode(' sh600519 '), '600519');
+  assert.throws(() => wl.normalizeCode('abc'), /6 位数字/);
+  assert.throws(() => wl.normalizeCode('12345'), /6 位数字/);
+  assert.throws(() => wl.normalizeCode(''), /6 位数字/);
+});
+
+check('自选股标签 / 关注要点：逗号顿号换行都能切，去重且限量', () => {
+  const wl = require('../server/lib/watchlist');
+  assert.deepStrictEqual(wl.sanitizeList('白酒, 消费、沪深300', 8, 16), ['白酒', '消费', '沪深300']);
+  assert.deepStrictEqual(wl.sanitizeList('a\nb\nc', 8, 16), ['a', 'b', 'c']);
+  assert.deepStrictEqual(wl.sanitizeList(['白酒', '白酒', ' 消费 '], 8, 16), ['白酒', '消费']);
+  assert.strictEqual(wl.sanitizeList('一,二,三,四,五', 3, 16).length, 3, '超出上限应被截断');
+  assert.strictEqual(wl.sanitizeText('很长'.repeat(20), 16).length, 16);
+  assert.deepStrictEqual(wl.sanitizeList('', 8, 16), []);
+});
+
+check('自选股增删改：落盘可回读，重复 / 越界 / 不存在都会被拒', () => {
+  const fs = require('fs');
+  const wl = require('../server/lib/watchlist');
+  const original = fs.readFileSync(wl.FILE, 'utf8');
+  try {
+    // 用一个确定不在自选股里的代码做探针
+    const probe = wl.load().stocks.some((s) => s.code === '601398') ? '600028' : '601398';
+
+    const added = wl.add({ code: probe, tags: '银行, 高股息', watchPoints: '净息差\n资产质量' }, '工商银行');
+    const item = added.stocks.find((s) => s.code === probe);
+    assert.ok(item, '新增的股票没写进去');
+    assert.strictEqual(item.name, '工商银行', '名称没有采用行情源解析出来的');
+    assert.deepStrictEqual(item.tags, ['银行', '高股息']);
+    assert.deepStrictEqual(item.watchPoints, ['净息差', '资产质量']);
+    // 必须真落盘：重新读文件也看得到，不是只改了内存
+    assert.ok(wl.load().stocks.some((s) => s.code === probe), '没有真的写进 watchlist.json');
+
+    assert.throws(() => wl.add({ code: probe }), /已经有/, '重复添加应被拒');
+
+    wl.update({ code: probe, name: '工商银行A', tags: '银行' });
+    const updated = wl.load().stocks.find((s) => s.code === probe);
+    assert.strictEqual(updated.name, '工商银行A');
+    assert.deepStrictEqual(updated.tags, ['银行']);
+
+    const idx = wl.load().stocks.findIndex((s) => s.code === probe);
+    wl.move({ code: probe, delta: -1 });
+    assert.strictEqual(wl.load().stocks.findIndex((s) => s.code === probe), idx - 1, '上移一位没生效');
+    const last = wl.load().stocks.length - 1;
+    wl.move({ code: probe, delta: 1 });
+    wl.move({ code: probe, delta: 1 });
+    assert.strictEqual(wl.load().stocks.findIndex((s) => s.code === probe), last, '已经在末尾就不该再动');
+
+    wl.remove({ code: probe });
+    assert.ok(!wl.load().stocks.some((s) => s.code === probe), '删除后还在');
+    assert.throws(() => wl.remove({ code: probe }), /没有/, '删不存在的应报错');
+    assert.throws(() => wl.update({ code: probe, name: 'x' }), /没有/, '改不存在的应报错');
+
+    // 写盘是「临时文件 + 改名」，不该留下半截文件
+    assert.ok(!fs.existsSync(wl.FILE + '.tmp'), '留下了 .tmp 临时文件');
+
+    // 塞满到上限以后，再加就该被拦
+    const full = wl.load();
+    full.stocks = [];
+    for (let i = 0; i < wl.MAX_STOCKS; i += 1) {
+      full.stocks.push({ code: String(600000 + i), name: '压测', tags: [], watchPoints: [] });
+    }
+    wl.save(full);
+    assert.throws(() => wl.add({ code: probe }), /最多 \d+ 只/, '超过上限应被拦下');
+  } finally {
+    // 无论断言成功还是失败，都把玩家自己的自选股原样放回去
+    fs.writeFileSync(wl.FILE, original, 'utf8');
+  }
+  assert.strictEqual(fs.readFileSync(wl.FILE, 'utf8'), original, '测试没有把自选股还原回去');
+});
+
 console.log('手机访问 / 局域网地址');
 check('只枚举真实局域网 IPv4，排除回环与 169.254 假地址', () => {
   const list = net.lanAddresses();

@@ -15,6 +15,7 @@ const globalFeed = require('./sources/global');
 const market = require('./sources/market');
 const guba = require('./sources/guba');
 const screener = require('./sources/screener');
+const stockSearch = require('./sources/stockSearch');
 const analysis = require('./sources/analysis');
 const advice = require('./sources/advice');
 const embed = require('./sources/embed');
@@ -24,6 +25,7 @@ const translate = require('./lib/translate');
 const net = require('./lib/net');
 const qrCode = require('./lib/qr');
 const windowBridge = require('./lib/window');
+const watchlistStore = require('./lib/watchlist');
 const { cached, cacheInfo } = require('./lib/cache');
 
 const SERVER_STARTED_AT = new Date().toISOString();
@@ -36,7 +38,18 @@ const DATA_DIR = path.join(__dirname, 'data');
 function readJsonFile(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
 }
-function loadWatchlist() { return readJsonFile(path.join(DATA_DIR, 'watchlist.json')); }
+function loadWatchlist() { return watchlistStore.load(); }
+
+/** 用行情源把 6 位代码解析成 { code, name, price, changePct }；查不到返回 null。 */
+async function resolveStockByCode(code) {
+  const list = await quotes.getQuotes([code], 15000);
+  const hit = (list || []).find((x) => x.code === code);
+  if (!hit) return null;
+  return {
+    code: hit.code, name: hit.name || '', price: hit.price, changePct: hit.changePct,
+    amountYuan: hit.amountYuan, marketCap: hit.marketCap
+  };
+}
 function loadKnowledge() { return readJsonFile(path.join(DATA_DIR, 'knowledge.json')); }
 /** 前端资源指纹：app.js 大小 + 修改时间。变了就说明界面代码更新过，前端会自动重新加载。 */
 function appVersion() {
@@ -327,6 +340,35 @@ async function handleApi(req, res, url) {
     catch (err) { return sendJson(res, 502, { error: String(err.message || err) }); }
   }
 
+  // 自选股「选股」：6 位代码直接查实时行情，其余当关键字去股票池里搜
+  if (pathname === '/api/stock/lookup' && req.method === 'GET') {
+    const keyword = String(q.get('q') || '').trim();
+    if (!keyword) return sendJson(res, 400, { error: '请输入股票代码或名称关键字' });
+    const digits = keyword.replace(/\D/g, '');
+    try {
+      if (/^\d{6}$/.test(digits)) {
+        const hit = await resolveStockByCode(digits);
+        if (!hit) return sendJson(res, 404, { error: '没查到 ' + digits + ' 的行情，请确认代码是否正确' });
+        return sendJson(res, 200, { query: keyword, mode: 'code', results: [hit] });
+      }
+      if (/^\d+$/.test(keyword)) return sendJson(res, 400, { error: '股票代码是 6 位数字，请补全后再查' });
+      const hits = await stockSearch.search(keyword, 12);
+      if (!hits.length) return sendJson(res, 200, { query: keyword, mode: 'keyword', results: [] });
+      // 顺手补上最新价与涨跌幅，候选列表里就能看个大概（失败不影响搜索结果）
+      const hitQuotes = await quotes.getQuotes(hits.map((h) => h.code), 15000).catch(() => []);
+      const results = hits.map((h) => {
+        const quote = (hitQuotes || []).find((x) => x.code === h.code) || {};
+        return {
+          code: h.code, name: h.name || quote.name || '', market: h.market,
+          price: quote.price, changePct: quote.changePct, amountYuan: quote.amountYuan
+        };
+      });
+      return sendJson(res, 200, { query: keyword, mode: 'keyword', results });
+    } catch (err) {
+      return sendJson(res, 502, { error: String(err.message || err) });
+    }
+  }
+
   if (pathname === '/api/screener' && req.method === 'GET') {
     const query = Object.fromEntries(q.entries());
     try { return sendJson(res, 200, await screener.screen(query)); }
@@ -487,6 +529,30 @@ const server = http.createServer(async (req, res) => {
       'Access-Control-Allow-Headers': 'Content-Type'
     });
     return res.end();
+  }
+
+  // 自选股增删改：写 server/data/watchlist.json。本机工具，别把 8787 暴露到公网。
+  if (req.method === 'POST' && url.pathname.startsWith('/api/watchlist/')) {
+    const action = url.pathname.slice('/api/watchlist/'.length);
+    try {
+      const raw = await readBody(req, 64 * 1024);
+      const body = raw ? JSON.parse(raw) : {};
+      if (action === 'add') {
+        const code = watchlistStore.normalizeCode(body.code);
+        let name = watchlistStore.sanitizeText(body.name, 16);
+        if (!name) {
+          const hit = await resolveStockByCode(code).catch(() => null);
+          if (hit && hit.name) name = hit.name;
+        }
+        return sendJson(res, 200, { ok: true, action, watchlist: watchlistStore.add(body, name) });
+      }
+      if (action === 'remove') return sendJson(res, 200, { ok: true, action, watchlist: watchlistStore.remove(body) });
+      if (action === 'update') return sendJson(res, 200, { ok: true, action, watchlist: watchlistStore.update(body) });
+      if (action === 'move') return sendJson(res, 200, { ok: true, action, watchlist: watchlistStore.move(body) });
+      return sendJson(res, 404, { error: '未知的自选股操作: ' + action });
+    } catch (err) {
+      return sendJson(res, err.status || 400, { error: String(err.message || err) });
+    }
   }
 
   if (req.method === 'POST' && (url.pathname === '/api/coal/import/upload' || url.pathname === '/api/coal/inventory/upload')) {
