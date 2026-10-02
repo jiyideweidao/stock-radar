@@ -14,5 +14,6 @@
     "selftest": "node test/selftest.js",
     "visual": "node test/visual-check.js",
     "mobile": "node test/mobile-check.js"
-  }
+  },
+  "license": "MIT"
 }

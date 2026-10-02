@@ -5,12 +5,35 @@
 
 > 本工具只做公开数据聚合与规则化统计，**不预测涨跌、不构成投资建议**。
 
+## 界面预览
+
+桌面版（Edge 应用窗口，1600×1000 固定视口截图）：
+
+![总览](docs/images/overview.jpg)
+
+| | |
+| --- | --- |
+| **自选股 · 行情表 + 主力资金**<br>![自选股](docs/images/stocks.jpg) | **个股体检 · 规则评分 + 技术指标 + 分时**<br>![个股体检](docs/images/analysis.jpg) |
+| **舆情新闻 · 多源聚合，英文自动转中文**<br>![舆情新闻](docs/images/news.jpg) | **选股器 · 条件筛选全市场**<br>![选股器](docs/images/screener.jpg) |
+| **选股建议 · 规则化候选与理由**<br>![选股建议](docs/images/advice.jpg) | **棉花 / 大宗商品 · 期货与现货联动**<br>![大宗商品](docs/images/commodity.jpg) |
+| **煤炭库存与进口 · 柱状分析图 + 台账明细**<br>![煤炭](docs/images/coal.jpg) | **股吧情绪 · 人气与多空统计**<br>![股吧](docs/images/guba.jpg) |
+
+**交易知识库**（把交易书提炼成可勾选的规则条目）：
+
+![交易知识库](docs/images/knowledge.jpg)
+
+手机端（412×915 安卓视口，页签栏移到底部；桌面专属按钮自动隐藏）：
+
+| | |
+| --- | --- |
+| ![手机总览](docs/images/mobile-overview.jpg) | ![手机自选股](docs/images/mobile-stocks.jpg) |
+
 ## 快速开始
 
 ```bash
 cd stock-radar
 npm start                  # 启动服务，默认 http://127.0.0.1:8787
-npm run selftest           # 离线自检（62 项，不依赖外网）
+npm run selftest           # 离线自检（63 项，不依赖外网）
 npm run visual             # 可选：无头 Edge 逐页截图验收（需 playwright-core）
 npm run mobile             # 可选：412×915 安卓视口验收（溢出 / 页签栏 / 二维码真解码）
 ```
@@ -310,9 +333,11 @@ stock-radar/
 ├── desktop/                   桌面启动器：启动 / 停止 / 自检 / 图标 / 窗口代理（window-agent.ps1）、
 │                              允许手机访问.ps1（防火墙放行 TCP 8787，可 -Remove 撤销）
 ├── docs/books/                交易知识库的书籍学习提要（33 本，由 tools/book-to-skill.js 生成）
+├── docs/images/               README 里的界面预览图（1600×1000 固定视口截图，
+│                              原始整页截图由 npm run visual 产出到 screenshots/，不入库）
 ├── tools/book-to-skill.js     把书单提炼为 knowledge.json 与 docs/books/ 的生成脚本
 ├── tools/resolve-douban.js    把每本书解析到豆瓣具体书目页，产出 book-links.json（只取公开元数据）
-└── test/                      selftest.js（62 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
+└── test/                      selftest.js（63 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
                                mobile-check.js（412×915 安卓视口：溢出 / 页签栏 / 二维码真解码）
 ```
 
@@ -336,3 +361,8 @@ stock-radar/
 未下载或分发任何受版权保护的书籍 PDF 或电子书，`docs/books/` 仅为方法论的学习提炼。
 「交易知识库」里的「阅读原文」只跳转豆瓣书目页 / 微信读书 / 孔夫子旧书网等正版渠道，**不提供原书正文**；
 要读全文请通过上述渠道购买、订阅或在图书馆借阅。唯一可自由阅读全文的是公有领域的《股票大作手回忆录》。
+
+## 许可
+
+本项目以 **MIT License** 发布，可自由使用、修改、分发（保留版权声明即可），详见 [LICENSE](LICENSE)。
+`docs/books/` 下的书籍提要为本项目自行整理的学习笔记；书中的观点与原文版权归各自作者与出版方所有。
