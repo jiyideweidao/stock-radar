@@ -483,6 +483,188 @@ check('自选股增删改：落盘可回读，重复 / 越界 / 不存在都会�
   assert.strictEqual(fs.readFileSync(wl.FILE, 'utf8'), original, '测试没有把自选股还原回去');
 });
 
+console.log('多智能体研判');
+check('多空计票：倾向、立场阈值与「论据不足不给高置信」', () => {
+  const A = require('../server/lib/agents')._internals;
+  const f = A.finding;
+  assert.strictEqual(A.tally([f('a', 1, '', 'bull', 1), f('b', 1, '', 'bear', 1)]).pct, 0);
+  assert.strictEqual(A.tally([f('a', 1, '', 'bull', 3)]).pct, 100);
+  assert.strictEqual(A.tally([f('a', 1, '', 'neutral', 5)]).pct, 0, '中性论据只扩大分母，不该改变方向');
+  assert.strictEqual(A.stanceOf(25), 'bull');
+  assert.strictEqual(A.stanceOf(-25), 'bear');
+  assert.strictEqual(A.stanceOf(0), 'neutral');
+  // 只有一两条论据时，哪怕方向一致也不该给出高置信
+  assert.ok(A.confidenceOf(100, 1) <= 40, '论据只有 1 条却给了高置信');
+  assert.ok(A.confidenceOf(100, 8) > A.confidenceOf(100, 1));
+  assert.ok(A.confidenceOf(100, 20) <= 92, '置信度不该顶到 100');
+});
+
+check('产业链匹配：行业优先于名称，人工覆盖表能救回「看名字猜不出」的票', () => {
+  const A = require('../server/lib/agents');
+  assert.strictEqual(A.matchChain('郑州煤电').id, 'coal', '名称含「煤」应归到煤炭链');
+  // 行业比名称可靠：名字是科技股，行业却是煤炭开采
+  assert.strictEqual(A.matchChain('天融信', { industry: '煤炭开采', concepts: [] }).id, 'coal');
+  // 新赛股份：名称与东财行业「种植业」都不含「棉」，靠人工核对过的覆盖表归到棉花链
+  assert.strictEqual(
+    A.matchChain('新赛股份', { code: '600540', industry: '种植业', concepts: ['农业种植'] }).id, 'cotton');
+  // 覆盖表只在带 code 时生效，不会误伤同名的其他标的
+  assert.strictEqual(A.matchChain('新赛股份', { industry: '种植业' }).id, 'agri');
+  // 匹配不到就返回 null，宁可漏判也不硬凑
+  assert.strictEqual(A.matchChain('天融信', { code: '002212', industry: '软件开发', concepts: ['网络安全', '人工智能'] }), null);
+});
+
+check('研究员辩论：双方各自成文，且必须给出对方论据的失效条件', () => {
+  const A = require('../server/lib/agents')._internals;
+  const analysts = [{
+    id: 'tech', name: '技术面分析师', findings: [
+      A.finding('均线排列', '空头排列', 'MA5<MA10<MA20', 'bear', 3),
+      A.finding('量能', '放量', '量价配合', 'bull', 2)
+    ]
+  }];
+  const bull = A.researcher('bull', analysts);
+  const bear = A.researcher('bear', analysts);
+  assert.strictEqual(bull.stance, 'bull');
+  assert.strictEqual(bear.stance, 'bear');
+  assert.ok(bull.findings.length === 1 && bear.findings.length === 1, '各自只该拿到自己那一侧的论据');
+  assert.ok(bull.opponent && bull.opponent.label === '均线排列', '多头必须点出对方最强的论据');
+  assert.ok(/MA5 重新上穿/.test(bull.opponent.rebuttalCondition), '反驳应给出具体的失效条件，而不是空话');
+  assert.ok(/对方最有力/.test(bull.summary), 'summary 里要写清辩论的另一半');
+});
+
+/* 这条是回归测试：早期版本无论股价在 MA20 上方还是下方，都拿 MA20 当区间下沿，
+   结果跌破 MA20 时算出「下沿 5.93 > 上沿 5.52」的倒挂区间，还配一个虚高的盈亏比。 */
+check('交易员：跌破 MA20 时不给回踩区间、不给盈亏比，止损必须落在现价下方', () => {
+  const A = require('../server/lib/agents')._internals;
+  const mk = (closes) => closes.map((c, i) => ({
+    date: '2026-01-01', open: c, close: c, high: c * 1.01, low: c * 0.99, volume: 1000 + i
+  }));
+  const indicators = require('../server/lib/indicators');
+  const run = (closes) => {
+    const bars = mk(closes);
+    const i = bars.length - 1;
+    const ma20 = indicators.sma(bars.map((b) => b.close), 20);
+    const slope = ma20[i] && ma20[i - 5] ? ((ma20[i] - ma20[i - 5]) / ma20[i - 5]) * 100 : null;
+    const ctx = {
+      tech: indicators.analyze(bars), bars: bars, last: bars[i], prev: bars[i - 1],
+      ma20SlopePct: slope, change5Pct: ((bars[i].close / bars[i - 5].close - 1) * 100)
+    };
+    const stub = [
+      { id: 'tech', score: 30, evidenceCount: 5, findings: [] },
+      { id: 'capital', score: -10, evidenceCount: 4, findings: [] },
+      { id: 'sentiment', score: 10, evidenceCount: 3, findings: [] },
+      { id: 'industry', score: 0, evidenceCount: 0, findings: [] }
+    ];
+    return A.traderAgent(ctx, stub, { evidenceCount: 5 }, { evidenceCount: 4 });
+  };
+
+  // 先涨后急跌：最后一根收在 MA20 下方
+  const down = run([].concat(
+    Array.from({ length: 45 }, (_, i) => 10 + i * 0.1),
+    Array.from({ length: 10 }, (_, i) => 14.4 - i * 0.28)
+  ));
+  assert.strictEqual(down.plan.mode, 'wait-reclaim', '跌破 MA20 时应判为「先收复均线」');
+  assert.strictEqual(down.plan.zoneLow, null, '逆势位置不该给回踩区间');
+  assert.strictEqual(down.plan.zoneHigh, null);
+  assert.strictEqual(down.plan.riskReward, null, '逆势位置算出来的盈亏比会虚高，必须不给');
+  assert.ok(down.plan.reclaimLevel > 0, '应给出需要先收复的 MA20 价位');
+  assert.ok(down.plan.stopRef < down.plan.entryHigh || down.plan.stopRef !== null, '止损要有值');
+  assert.ok(down.plan.stopRef !== null && down.plan.stopPct > 0, '止损必须落在现价下方');
+
+  // 一路上涨：收盘在 MA20 上方，区间不能倒挂
+  const up = run(Array.from({ length: 55 }, (_, i) => 10 + i * 0.1));
+  assert.strictEqual(up.plan.mode, 'trend-follow');
+  assert.ok(up.plan.zoneLow <= up.plan.zoneHigh, '区间下沿不能高于上沿（倒挂）');
+  assert.ok(up.plan.riskReward > 0, '顺势位置应给出盈亏比');
+  assert.ok(up.plan.maxPositionPct > 0 && up.plan.maxPositionPct <= 30, '仓位上限应落在 (0, 30%]');
+});
+
+check('风控：空头排列 / 跌破 MA60 / 主力派发都会成为否决项', () => {
+  const A = require('../server/lib/agents')._internals;
+  const indicators = require('../server/lib/indicators');
+  const closes = Array.from({ length: 80 }, (_, i) => 30 - i * 0.25);
+  const bars = closes.map((c, i) => ({ date: '2026-01-01', open: c, close: c, high: c * 1.01, low: c * 0.99, volume: 1000 + i }));
+  const i = bars.length - 1;
+  const ctx = {
+    tech: indicators.analyze(bars), bars: bars, last: bars[i], prev: bars[i - 1],
+    ma20SlopePct: -5, change5Pct: -6,
+    fundFlow: { mainNet: -2e8, mainPct: -8, smallNet: 1.5e8, superNet: -1.5e8, bigNet: -0.5e8 },
+    stockNews: { sentiment: { score: 40, label: '偏多' }, items: [{}] },
+    chain: null, coalSeries: null
+  };
+  const risk = A.riskAgent(ctx, []);
+  assert.strictEqual(risk.vetoed, true, '单边下跌 + 主力派发应该触发否决');
+  const labels = risk.vetoes.map((v) => v.label).join('、');
+  assert.ok(/空头排列/.test(labels), '缺少空头排列否决项');
+  assert.ok(/MA60/.test(labels), '缺少跌破 MA60 否决项');
+  assert.ok(/派发/.test(labels), '缺少主力派发否决项');
+  assert.ok(/宁可错过/.test(risk.summary), '否决结论要说明处置原则');
+});
+
+check('风控卡片不会把同一条否决项列两遍', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const A = require('../server/lib/agents')._internals;
+  const indicators = require('../server/lib/indicators');
+  const closes = Array.from({ length: 80 }, (_, i) => 30 - i * 0.25);
+  const bars = closes.map((c, i) => ({ date: '2026-01-01', open: c, close: c, high: c * 1.01, low: c * 0.99, volume: 1000 + i }));
+  const i = bars.length - 1;
+  const ctx = {
+    tech: indicators.analyze(bars), bars: bars, last: bars[i], prev: bars[i - 1],
+    ma20SlopePct: -5, change5Pct: -6,
+    fundFlow: { mainNet: -2e8, mainPct: -8, smallNet: 1.5e8, superNet: -1.5e8, bigNet: -0.5e8 },
+    stockNews: { sentiment: { score: 40, label: '偏多' }, items: [{}] },
+    chain: null, coalSeries: null
+  };
+  const risk = A.riskAgent(ctx, []);
+  const vetoRows = risk.findings.filter((f) => f.value === '否决项');
+  assert.strictEqual(vetoRows.length, risk.vetoes.length, 'findings 里的否决项条数应与 vetoes 一致');
+  const labels = vetoRows.map((f) => f.label);
+  assert.strictEqual(new Set(labels).size, labels.length, '同一条否决项不能在 findings 里重复: ' + labels.join('、'));
+  // 前端同理：riskCard 只渲染 findings 清单，不再把 r.vetoes 重新铺成明细
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+  const body = app.slice(app.indexOf('function riskCard(r) {'), app.indexOf('function renderAgents(d) {'));
+  assert.ok(!/r\.vetoes/.test(body), 'riskCard 不该再自己渲染 r.vetoes（会和 summary / findings 重复）');
+  assert.ok(/findingsHtml\(r\.findings\)/.test(body), 'riskCard 应该渲染 findings 清单');
+  assert.ok(/agent-summary/.test(body), 'riskCard 应该保留 summary');
+});
+
+console.log('外部程序接入（TradingAgents-CN）');
+check('接入地址只接受 http/https，非法地址与未知接入项都会被拒', () => {
+  const it = require('../server/lib/integrations');
+  assert.strictEqual(it.normalizeUrl('http://127.0.0.1:3000'), 'http://127.0.0.1:3000');
+  assert.strictEqual(it.normalizeUrl('http://127.0.0.1:3000/'), 'http://127.0.0.1:3000', '末尾斜杠应被去掉');
+  assert.throws(() => it.normalizeUrl('ftp://127.0.0.1'), /http/, '非 http 协议必须拦下');
+  assert.throws(() => it.normalizeUrl('这不是地址'), /格式/, '乱填的地址必须拦下');
+  assert.throws(() => it.normalizeUrl(''), /不能为空/);
+  assert.throws(() => it.describe('nope'), /未知的接入项/);
+});
+
+check('接入说明如实标注授权：不可再分发的部分必须写明，且步骤与端口对得上', () => {
+  const it = require('../server/lib/integrations');
+  const d = it.describe('tradingagents');
+  assert.strictEqual(d.license.redistributable, false, '不能声称可以再分发');
+  assert.ok(/禁止再分发/.test(d.license.closedPart), '必须写明专有组件禁止再分发');
+  assert.ok(/Apache-2\.0/.test(d.license.openPart), '开源部分要写明许可证');
+  const urls = d.candidates.map((c) => c.url).join(' ');
+  assert.ok(/:3000/.test(urls) && /:8000/.test(urls), '默认端口应含前端 3000 与后端 8000');
+  assert.ok(d.steps.some((s) => /uvicorn/.test(s)), '缺少后端启动步骤');
+  assert.ok(d.requirements.some((s) => /MongoDB/.test(s)), '缺少数据库依赖说明');
+});
+
+check('界面图标一律内联 SVG，不再用 emoji 当图标', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+  assert.ok(/<svg class="icon-sprite"/.test(html), 'index.html 缺少图标精灵');
+  assert.ok(/<symbol id="i-check"/.test(html), '图标精灵里没有 i-check');
+  assert.ok(/function icon\(name, cls\)/.test(app), 'app.js 缺少 icon() 助手');
+  // favicon 也是自绘 SVG，所以整份文件都不该再出现 emoji
+  const emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u;
+  assert.ok(!emoji.test(html), 'index.html 里还残留 emoji 当图标');
+  assert.ok(!emoji.test(app), 'app.js 里还残留 emoji 当图标');
+});
+
 console.log('手机访问 / 局域网地址');
 check('只枚举真实局域网 IPv4，排除回环与 169.254 假地址', () => {
   const list = net.lanAddresses();

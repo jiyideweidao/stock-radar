@@ -17,6 +17,8 @@ const TABS = [
   ['sources', '数据源浏览', 10000],
   ['screener', '选股器', 12000],
   ['advice', '选股建议', 60000],
+  // 研判要拉多只股票的行情/资金/舆情再跑规则引擎，给足 30 秒
+  ['agents', '智能体研判', 30000],
   ['guba', '股吧', 12000],
   ['commodity', '棉花大宗商品', 10000],
   ['coal', '煤炭库存与进口', 10000],
@@ -73,6 +75,26 @@ const TABS = [
       const items = await page.$$eval('#sourceFeed li', (els) => els.length);
       console.log('  源条目数: ' + items);
       if (items < 3) errors.push('EMPTY: 数据源浏览几乎没有条目 (' + items + ')');
+    }
+    if (id === 'agents') {
+      // 四个分析师各一张卡 + 多空两栏 + 交易员/风控各一张，缺一不可
+      const analysts = await page.$$eval('#agentsAnalysts .agent-card', (els) => els.length);
+      const debate = await page.$$eval('#agentsDebate .debate-col', (els) => els.length);
+      const trCards = await page.$$eval('#agentsTraderRisk .agent-card', (els) => els.length);
+      const gaps = await page.$$eval('#agentsGaps .gap-list span', (els) => els.length);
+      const verdict = (await page.textContent('#agentsVerdict')).replace(/\s+/g, ' ').trim();
+      const panel = (await page.textContent('#agentsIntegration')).replace(/\s+/g, ' ').trim();
+      console.log('  智能体: 分析师 ' + analysts + ' 张 / 辩论 ' + debate + ' 栏 / 交易员+风控 ' + trCards + ' 张 / 数据缺口 ' + gaps);
+      console.log('  研判结论: ' + verdict.slice(0, 90));
+      if (analysts !== 4) errors.push('AGENTS: 分析师卡片应为 4 张，实际 ' + analysts);
+      if (debate !== 2) errors.push('AGENTS: 多空辩论应为 2 栏，实际 ' + debate);
+      if (trCards !== 2) errors.push('AGENTS: 交易员与风控卡片应为 2 张，实际 ' + trCards);
+      if (/加载中|正在让四个分析师/.test(verdict)) errors.push('AGENTS: 研判一直停在加载态 -> ' + verdict.slice(0, 60));
+      if (!/TradingAgents-CN/.test(panel)) errors.push('AGENTS: 缺少 TradingAgents-CN 接入面板');
+      // 授权限制必须如实写在界面上，不能只写在 README 里
+      if (!/禁止再分发|再分发/.test(panel)) errors.push('AGENTS: 接入面板没有说明「禁止再分发」的授权限制');
+      if (/\.\.\.$/.test(verdict)) errors.push('AGENTS: 结论像是被截断了');
+      await page.screenshot({ path: path.join(OUT, 'agents-detail.png'), fullPage: true });
     }
   }
 

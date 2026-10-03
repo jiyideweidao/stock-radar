@@ -65,6 +65,34 @@ async function getQuotes(codes, ttlMs = 30000) {
   });
 }
 
+const EM_PROFILE_FIELDS = 'f12,f14,f100,f103';
+
+/**
+ * 个股所属行业与概念板块（东财 f100 行业 / f103 概念）。
+ * 产业链分析师靠它把个股接回商品链：只按股票名称猜行业太不可靠
+ * （例：新赛股份的名字里既没有「棉」也没有「农」，但东财行业是「种植业」）。
+ * 行业变动很慢，缓存 1 小时。
+ */
+async function getProfile(code) {
+  const c = String(code).replace(/\D/g, '');
+  if (!c) return null;
+  return cached('profile:' + c, 3600000, async () => {
+    const url = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=1&secids=' +
+      toSecid(c) + '&fields=' + EM_PROFILE_FIELDS;
+    const json = await fetchJson(url, { referer: UA_REF });
+    const diff = (json && json.data && json.data.diff) || [];
+    const rows = Array.isArray(diff) ? diff : Object.values(diff);
+    const row = rows.filter(Boolean)[0];
+    if (!row) return null;
+    return {
+      code: row.f12,
+      name: row.f14,
+      industry: row.f100 && row.f100 !== '-' ? String(row.f100) : '',
+      concepts: row.f103 && row.f103 !== '-' ? String(row.f103).split(',').filter(Boolean) : []
+    };
+  });
+}
+
 /**
  * 日 K 线。klt: 101=日 102=周 103=月
  * @returns {Array<{date,open,close,high,low,volume,amount}>}
@@ -128,4 +156,4 @@ async function getIndexes() {
   });
 }
 
-module.exports = { getQuotes, getKline, getIndexes, sma, toSecid, scale, INDEXES };
+module.exports = { getQuotes, getProfile, getKline, getIndexes, sma, toSecid, scale, INDEXES };

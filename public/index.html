@@ -14,9 +14,41 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <title>股民舆情与商品看板 · 工作站</title>
 <link rel="stylesheet" href="/styles.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+<!-- 图标用 SVG 画，不用 emoji：emoji 字形随系统变，标签页上的观感不可控 -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b0f16'/><path d='M7 22l6-7 4 4 8-9' fill='none' stroke='%234a9eff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 </head>
 <body>
+
+<!--
+  图标一律用内联 SVG，不用 emoji：
+  emoji 在不同系统上字形不一致、无法跟随主题色，也不受 design token 控制。
+  这里做成 <symbol> 精灵，页面里用 <svg class="icon"><use href="#i-xxx"></use></svg> 引用。
+  全部 24x24、2px 描边、圆角端点，保证同一层级的图标粗细一致。
+-->
+<svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-block" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+  <symbol id="i-flow" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V5"/><path d="M10 6h8v4h-8z"/></symbol>
+  <symbol id="i-chain" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-bull" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
+  <symbol id="i-bear" viewBox="0 0 24 24"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.8 9.8 0 0 1 6.7 2.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.8 9.8 0 0 1-6.7-2.7L3 16"/><path d="M8 16H3v5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 15 7-7 7 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+</defs></svg>
 
 <header class="topbar">
   <div class="brand">股民舆情与商品看板 <small>行情 · 选股 · 舆情 · 股吧 · 煤炭 · 知识库</small></div>
@@ -108,6 +140,7 @@
   <button data-view="sources">数据源浏览</button>
   <button data-view="screener">选股器</button>
   <button data-view="advice">选股建议</button>
+  <button data-view="agents">智能体研判</button>
   <button data-view="guba">股吧</button>
   <button data-view="commodity">棉花 / 大宗商品</button>
   <button data-view="coal">煤炭库存 / 进口</button>
@@ -322,6 +355,44 @@
         <h3>帖子列表 <span class="tag">按情绪从高到低</span></h3>
         <ul class="news-list" id="gubaPosts"><li class="loading">加载中…</li></ul>
       </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-agents">
+    <div class="filters">
+      <span class="dim">自选股快捷：</span>
+      <span class="wl-btns" id="agentsQuick"></span>
+      <input id="agentsCode" placeholder="输入 6 位代码" inputmode="numeric" maxlength="6" aria-label="股票代码">
+      <button class="action" id="agentsLoad">开始研判</button>
+      <span class="dim" id="agentsLink"></span>
+    </div>
+
+    <div id="agentsNotice"></div>
+
+    <div class="card" id="agentsVerdict">
+      <div class="loading">选择一只股票后开始多智能体研判…</div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>分析师团队 <span class="tag">四个视角各看一遍，互不干扰</span></h3>
+      <div class="grid cols-2" id="agentsAnalysts"><div class="dim">等待研判…</div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>研究员辩论 <span class="tag">同一批证据，多空各写一份，并回应对方最强论据</span></h3>
+      <div class="grid cols-2" id="agentsDebate"></div>
+    </div>
+
+    <div class="grid cols-2" style="margin-top:14px" id="agentsTraderRisk"></div>
+
+    <div class="card" style="margin-top:14px" id="agentsGapsCard" hidden>
+      <h3>数据缺口</h3>
+      <div id="agentsGaps"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px" id="agentsIntegration">
+      <h3>接入外部程序 <span class="tag">TradingAgents-CN</span></h3>
+      <div id="agentsIntegrationBody"><div class="loading">正在检查本机是否有实例在运行…</div></div>
     </div>
   </section>
 

@@ -26,6 +26,8 @@ const net = require('./lib/net');
 const qrCode = require('./lib/qr');
 const windowBridge = require('./lib/window');
 const watchlistStore = require('./lib/watchlist');
+const agents = require('./lib/agents');
+const integrations = require('./lib/integrations');
 const { cached, cacheInfo } = require('./lib/cache');
 
 const SERVER_STARTED_AT = new Date().toISOString();
@@ -436,6 +438,25 @@ async function handleApi(req, res, url) {
     catch (err) { return sendJson(res, 502, { error: String(err.message || err) }); }
   }
 
+  // 智能体研判：本地多智能体引擎，不需要任何大模型 Key
+  const agentsMatch = pathname.match(/^\/api\/agents\/(\d{6})$/);
+  if (agentsMatch && req.method === 'GET') {
+    try { return sendJson(res, 200, await agents.runAgents(agentsMatch[1], { industry: q.get('industry') || undefined })); }
+    catch (err) { return sendJson(res, err.status || 502, { error: String(err.message || err) }); }
+  }
+
+  // 外部程序接入：列清单（纯静态说明，不探测）
+  if (pathname === '/api/integrations' && req.method === 'GET') {
+    return sendJson(res, 200, { integrations: integrations.list() });
+  }
+
+  // 外部程序接入：探测本机有没有在跑（只读取响应头，不调用对方接口）
+  if (pathname === '/api/integrations/status' && req.method === 'GET') {
+    const id = q.get('id') || 'tradingagents';
+    try { return sendJson(res, 200, await integrations.probe(id)); }
+    catch (err) { return sendJson(res, err.status || 502, { error: String(err.message || err) }); }
+  }
+
   const thsMatch = pathname.match(/^\/api\/ths\/(\d{6})\/(quote|daily|minute)$/);
   if (thsMatch && req.method === 'GET') {
     try {
@@ -529,6 +550,18 @@ const server = http.createServer(async (req, res) => {
       'Access-Control-Allow-Headers': 'Content-Type'
     });
     return res.end();
+  }
+
+  // 外部程序接入的配置（目前只有 baseUrl 与 enabled 两个字段）
+  if (url.pathname === '/api/integrations/config' && req.method === 'POST') {
+    try {
+      const raw = await readBody(req, 64 * 1024);
+      const body = raw ? JSON.parse(raw) : {};
+      const id = body.id || 'tradingagents';
+      return sendJson(res, 200, { ok: true, id: id, config: integrations.setConfig(id, body) });
+    } catch (err) {
+      return sendJson(res, err.status || 400, { error: String(err.message || err) });
+    }
   }
 
   // 自选股增删改：写 server/data/watchlist.json。本机工具，别把 8787 暴露到公网。

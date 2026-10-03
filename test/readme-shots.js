@@ -24,6 +24,8 @@ const TABS = [
   ['news', 'news', 11000],
   ['screener', 'screener', 13000],
   ['advice', 'advice', 60000],
+  // 智能体研判要拉多只股票的行情/资金/舆情再跑规则引擎，给足 30 秒
+  ['agents', 'agents', 30000],
   ['guba', 'guba', 13000],
   ['commodity', 'commodity', 11000],
   ['coal', 'coal', 11000],

@@ -3,12 +3,14 @@
 ![license](https://img.shields.io/github/license/jiyideweidao/stock-radar)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-339933?logo=node.js&logoColor=white)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
-![selftest](https://img.shields.io/badge/selftest-66%2F66-brightgreen)
+![selftest](https://img.shields.io/badge/selftest-75%2F75-brightgreen)
 ![platform](https://img.shields.io/badge/platform-Windows%20%C2%B7%20Node-lightgrey)
 ![stars](https://img.shields.io/github/stars/jiyideweidao/stock-radar?color=blue)
 
 一个零外部依赖（除可选的无头浏览器验收）的本地股市工作站：把 **A 股自选股行情、多源财经舆情、选股器、股吧情绪、棉花与煤炭商品走势、煤炭港口库存与月度进口台账** 聚合到一个页面，
 再用从交易知识库（33 本书）里提炼的规则引擎，对个股做可解释的「是否满足自定规则」体检。
+另有**多智能体研判**页：技术面／资金面／舆情／产业链四个分析师 → 多空研究员辩论 → 交易员合成计划 → 风控复核，
+全程**本地规则引擎**（不调用大模型、离线可复现、每条结论可展开追溯），并带 **TradingAgents-CN** 独立程序的接入面板。
 
 > 本工具只做公开数据聚合与规则化统计，**不预测涨跌、不构成投资建议**。
 
@@ -40,7 +42,7 @@
 ```bash
 cd stock-radar
 npm start                  # 启动服务，默认 http://127.0.0.1:8787
-npm run selftest           # 离线自检（66 项，不依赖外网）
+npm run selftest           # 离线自检（75 项，不依赖外网）
 npm run visual             # 可选：无头 Edge 逐页截图验收（需 playwright-core）
 npm run mobile             # 可选：412×915 安卓视口验收（溢出 / 页签栏 / 二维码真解码）
 npm run shots              # 可选：重出 docs/images/ 的界面预览图与社交预览图（SHOTS_ONLY=social 可只重出后者）
@@ -157,7 +159,8 @@ npm run shots              # 可选：重出 docs/images/ 的界面预览图与�
 
 > 局域网是 `http://`，不是安全上下文，浏览器**不允许注册 service worker**，所以这种访问方式下离线缓存不会启用——
 > 页面功能完全正常，只是断网时打不开。界面上会如实写出原因，不会假装注册成功。
-## 页面（11 个页签 + 桌面式菜单栏 + 状态栏）
+
+## 页面（12 个页签 + 桌面式菜单栏 + 状态栏）
 
 | 页签 | 内容 |
 | --- | --- |
@@ -167,12 +170,42 @@ npm run shots              # 可选：重出 docs/images/ 的界面预览图与�
 | **数据源浏览** | **按你点名的源逐个浏览**（财联社／东方财富 7×24／同花顺／新浪财经／华尔街见闻／金十数据），并如实列出「点名源 vs 实际接入状态」对照表 |
 | **选股器** | 6 个内置预设（强势动量／超跌观察／低估值／高换手活跃／成交额榜／权重蓝筹）+ 自定义条件（涨跌幅、换手、PE、PB、市值、名称），结果可点击跳转体检 |
 | **选股建议** | 先圈池子再逐只跑技术面规则：规则得分排序、通过/警示/不通过计数、短期与中期判定、支撑压力位、参考止损与**仓位上限**；严格条件今日无命中时会**自动放宽为「相对强势」口径并在页面上标注** |
+| **智能体研判** | 输入 6 位代码或点自选股快捷标签开始研判：四个分析师（技术面／资金面／舆情／产业链）各自给结论、证据与置信度，**多空研究员**各自成文并交叉反驳，**交易员**按权重合成交易计划（区间／止损／仓位上限／盈亏比），**风控**逐条否决检查；每条都能展开看到依据与数据缺口。页内附 **TradingAgents-CN** 接入面板（探测本机实例 / 配置地址 / 新窗口打开） |
 | **股吧** | 输入代码看散户讨论：情绪聚合、股吧热词云、逐帖情绪标签（口语词表：垃圾／割肉／涨停／主力…） |
 | **个股体检** | 从「自选股」点任意一行进入（已不占页签，因为它只服务于自选股）。8 条知识库规则逐条判定（通过／警示／不通过／不适用）、**日 K 线**（近 120 个交易日 + MA5/10/20）、技术指标表、分时图与日内摘要、走势分析、个股舆情、股吧情绪、当日资金 |
 | 棉花 / 大宗商品 | 18 个主力连续合约实时行情，CF（棉花）与 JM（焦煤）走势图，主题新闻 |
 | 煤炭库存 / 进口 | 各港口库存柱状图、合计趋势、动力煤价格、明细表、**月度进口量柱状图**、进口台账（环比/同比）、新闻抽取读数、两个 CSV 导入 |
 | 交易知识库 | 33 本书（基础／进阶／高阶／通用方法／拓展阅读）的可执行手册、下单前检查清单、每本书的核心观点／方法／陷阱。书目默认收起、点书名展开，支持按书名／作者／主题搜索。每本带「阅读原文」，**直链到该书在豆瓣的具体书目页**（已解析到版本，按钮上带评分与「可试读／有电子版」标记），另附微信读书与孔夫子。拓展阅读层为企业战略、财商与传记类，只作背景，不产出交易规则 |
 | **大盘云图** | 原样嵌入金融界「大盘云图」（全市场按行业分块的涨跌热力图）；另给「涨跌停温度计 / 龙虎榜」入口，这一页每次进入都先探测对方是否允许嵌入，不允许就如实说明并给新窗口入口 |
+
+## 智能体研判与 TradingAgents-CN 接入
+
+「智能体研判」页的结论**不是大模型写的**，而是本仓库 `server/lib/agents.js` 里的**本地规则引擎**按固定范式推出来的：
+技术面／资金面／舆情／产业链四个分析师各出一份结论（结论 + 证据 + 置信度）→ 多空研究员各自成文并写明「对方论据在什么条件下失效」→
+交易员按权重合成交易计划（趋势跟随给区间/盈亏比；逆势只给「等收复某价位」而不硬凑区间）→ 风控做否决项复核
+（空头排列 / 跌破 MA60 / 高位追涨 / 主力派发 / 舆情负背离 / 产业链逆风）。**离线可跑、每次结果可复现、每条结论都能展开对账。**
+
+### TradingAgents-CN 是「接入」，不是「内置」——授权原因
+
+[TradingAgents-CN](https://github.com/hsliuping/TradingAgents-CN) 是一个**独立的多智能体 LLM 中文金融研究框架**，
+它采用**分层授权（Hybrid Licensing）**，[原文 LICENSE](https://github.com/hsliuping/TradingAgents-CN/blob/main/LICENSE) 写得很明确：
+
+| 目录 | 许可证 | 允许 |
+| --- | --- | --- |
+| `tradingagents/` `cli/` `docs/` `tests/` `web/` 及根目录配置 | **Apache-2.0** | 自由使用、修改、分发、创建衍生作品 |
+| `app/` `frontend/` `core/` | **Source Available（源码可见但非开源）** | 仅个人使用与评估、教育用途；**禁止再分发、禁止修改后分发、禁止商业使用** |
+
+所以本工作站（**公开仓库 + MIT**）**只做「探测 + 嵌入 + 跳转」，不复制它的任何源码**。
+把 `app/` `frontend/` `core/` 搬进本仓库再发布就是**再分发**，会直接违反它的授权——这一点在界面面板里也如实写着。
+
+### 怎么用起来
+
+1. 自行克隆并运行 TradingAgents-CN（需要 **Python 3.11 + Node 18+ + MongoDB 7 + Redis 6 + 大模型 API Key**，这些都要你自己装）。
+2. 回到本工作站「智能体研判」页 → 底部「接入外部程序」→ 填地址（它前端默认 `http://127.0.0.1:3000`、后端默认 `http://127.0.0.1:8000`）。
+3. 工作站会逐个端口探测；**对方允许内嵌**就直接嵌在这一页，**禁止内嵌**（对方设了 `X-Frame-Options` / CSP）就如实说明并给「新窗口打开」入口。
+
+本机当前未检测到 `python` / MongoDB / Redis，所以这个面板默认是「未在运行」，属预期。
+探测接口：`GET /api/integrations/status?id=tradingagents`。
 
 ## 数据来源与真实性
 
@@ -310,6 +343,10 @@ GET  /api/window/state              窗口状态（标题、是否应用窗口�
                                      副作用：见到应用窗口后即武装「看门狗」——
                                      窗口消失（连续两次查不到）就退出后台进程（关窗即关程序）
 POST /api/window/:action            窗口控制（minimize/maximize/restore/close/topmost-on/topmost-off/focus，白名单）
+GET  /api/agents/:code               多智能体研判（分析师 / 多空辩论 / 交易员计划 / 风控复核 + 数据缺口）
+GET  /api/integrations               外部程序接入清单（含 TradingAgents-CN 的授权与依赖说明）
+GET  /api/integrations/status?id=    探测该程序在本机是否在运行（逐个候选端口）
+POST /api/integrations/config        {"id":"tradingagents","baseUrl":"http://127.0.0.1:3000"}
 GET  /api/knowledge                 交易知识库（33 本书）
 ```
 `/api/health` 的 `startedAt` 是服务启动时刻、`appVersion` 是前端 `app.js` 的「大小 + 修改时间」指纹、`uptimeSec` 是运行秒数。
@@ -334,13 +371,16 @@ stock-radar/
 │   ├── lib/                   http（GBK/JSONP）、cache、sentiment、feed（主题分类）、indicators（技术指标）、
 │   │                          translate（英文快讯机翻：限速队列 + 跳过冷却 + 持久缓存）、
 │   │                          window（调用 PowerShell 窗口代理）、selfcheck（工作站自检）、
-│   │                          net（局域网地址枚举）、qr（纯手写二维码编码器，无第三方依赖）
+│   │                          net（局域网地址枚举）、qr（纯手写二维码编码器，无第三方依赖）、
+│   │                          agents（多智能体研判：分析师 / 多空辩论 / 交易员 / 风控）、
+│   │                          integrations（外部程序接入登记与端口探测）
 │   ├── sources/               quotes、ths、cls、news、global、futures、coal、coalImport、
 │   │                          market、guba、screener、analysis、advice（选股建议 / 走势分析）、
 │   │                          embed（可嵌入的第三方页面白名单 + 能否嵌入探测）
 │   └── data/                  watchlist.json、coal_inventory.csv、coal_import.csv、
 │                              knowledge.json、sectors.json、
-│                              translate-cache.json（机翻缓存，删掉只会重翻一遍，不影响功能）
+│                              translate-cache.json（机翻缓存，删掉只会重翻一遍，不影响功能）、
+│                              integrations.json（外部程序接入配置，保存过才会生成）
 ├── public/                    index.html、styles.css、app.js（Canvas 绘图，无前端框架）、
 │                              manifest.webmanifest + sw.js + icons/（PWA：可「添加到主屏幕」）
 ├── desktop/                   桌面启动器：启动 / 停止 / 自检 / 图标 / 窗口代理（window-agent.ps1）、
@@ -351,7 +391,7 @@ stock-radar/
 │                              整页验收截图由 npm run visual 产出到 screenshots/，不入库）
 ├── tools/book-to-skill.js     把书单提炼为 knowledge.json 与 docs/books/ 的生成脚本
 ├── tools/resolve-douban.js    把每本书解析到豆瓣具体书目页，产出 book-links.json（只取公开元数据）
-└── test/                      selftest.js（66 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
+└── test/                      selftest.js（75 项离线自检）、visual-check.js（逐页截图 + 程序外壳验收）、
                                mobile-check.js（412×915 安卓视口：溢出 / 页签栏 / 二维码真解码）、
                                readme-shots.js（生成 README 预览图与社交预览图）
 ```

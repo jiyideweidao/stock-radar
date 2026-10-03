@@ -9,7 +9,8 @@ const state = {
   commodity: null,
   coal: null,
   knowledge: null,
-  bookQuery: ''
+  bookQuery: '',
+  agentsCode: null
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -18,7 +19,7 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 /* 页签 id -> 显示名，状态栏与「上次看到哪」都用它 */
 const VIEW_LABELS = {
   overview: '总览', stocks: '自选股', embed: '大盘云图', news: '舆情新闻', sources: '数据源浏览', screener: '选股器',
-  advice: '选股建议', guba: '股吧', analysis: '个股体检', commodity: '棉花 / 大宗商品',
+  advice: '选股建议', agents: '智能体研判', guba: '股吧', analysis: '个股体检', commodity: '棉花 / 大宗商品',
   coal: '煤炭库存 / 进口', knowledge: '交易知识库'
 };
 /* 桌面快捷方式会用 ?app=1 打开应用窗口，据此判断是不是「程序窗口」模式 */
@@ -28,7 +29,7 @@ const LAST_VIEW_KEY = 'stockradar.lastView';
 const ANALYSIS_CODE_KEY = 'stockradar.analysisCode';
 
 /* 这些接口天生慢（要跑几十次上游抓取），单独放宽超时 */
-const SLOW_API = /^\/api\/(advice|screener|coal\/extract|analysis|guba|stock|news|overview|sources|market|ths)/;
+const SLOW_API = /^\/api\/(advice|screener|coal\/extract|analysis|guba|stock|news|overview|sources|market|ths|agents|integrations)/;
 
 async function api(path, options) {
   const opt = Object.assign({}, options);
@@ -89,6 +90,17 @@ function esc(text) {
   return String(text === null || text === undefined ? '' : text)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/**
+ * 内联 SVG 图标。图标全部来自 index.html 里的 <symbol> 精灵。
+ * 为什么不用 emoji：字形随系统变、跟不了主题色、没法用 token 控制粗细，
+ * 而且屏幕阅读器会把 emoji 当文字念出来。这里的图标一律 aria-hidden，
+ * 含义由旁边的可见文字承担。
+ */
+function icon(name, cls) {
+  if (!name) return '';
+  return '<svg class="icon' + (cls ? ' ' + cls : '') + '" aria-hidden="true" focusable="false"><use href="#i-' + name + '"></use></svg>';
 }
 
 /* ---------------------------------- 图表 ---------------------------------- */
@@ -2025,7 +2037,7 @@ async function winAction(action) {
 
 /**
  * 应用窗口模式（?app=1）：开局告诉后台「工作站窗口就是这个」，后台据此武装看门狗——
- * 之后用户关掉窗口（标题栏 ✕ 或页面里的「关闭窗口」），后台服务会一起退出，不留后台进程。
+ * 之后用户关掉窗口（标题栏关闭按钮或页面里的「关闭窗口」），后台服务会一起退出，不留后台进程。
  * 只在应用窗口里做；浏览器标签页里不做，免得误停别人的服务。
  */
 async function armWindowWatch() {
@@ -2137,7 +2149,7 @@ function renderSelfcheck(result) {
   const body = $('#selfcheckBody');
   if (!body) return;
   const s = result.summary || {};
-  const icon = { ok: '✔', fail: '✕', skip: '○' };
+  const mark = { ok: 'check', fail: 'x', skip: 'dash' };
   const checked = s.ok + s.fail;
   const head = '<div class="sc-summary">' +
     '<span>' + (s.fail ? '<b class="up">' + s.ok + ' / ' + checked + ' 项通过</b>' : '<b class="down">已检查的 ' + checked + ' 项全部通过</b>') + '</span>' +
@@ -2150,7 +2162,7 @@ function renderSelfcheck(result) {
     const bad = g.checks.filter((c) => c.status === 'fail').length;
     const rows = g.checks.map((c) =>
       '<div class="sc-row ' + c.status + '">' +
-      '<span class="sc-icon">' + (icon[c.status] || '·') + '</span>' +
+      '<span class="sc-icon">' + (mark[c.status] ? icon(mark[c.status]) : '·') + '</span>' +
       '<span class="sc-name">' + esc(c.name) + '</span>' +
       '<span class="sc-detail">' + esc(c.detail) + '</span>' +
       '<span class="sc-ms">' + (c.ms ? c.ms + ' ms' : '') + '</span>' +
@@ -2321,7 +2333,8 @@ function bindMenubar() {
 
 /* ================================ 选股建议 ================================ */
 
-const ADVICE_ICON = { pass: '✅', warn: '⚠️', fail: '⛔', info: 'ℹ️', na: '—' };
+/* 状态 -> 图标名。na 用「—」不给图标：数据不足时给图标反而像下了结论 */
+const ADVICE_ICON = { pass: 'check', warn: 'alert', fail: 'block', info: 'info', na: null };
 
 function levelText(list) {
   if (!list || !list.length) return '—';
@@ -2399,7 +2412,7 @@ function adviceCard(c, i) {
       fmt.num(c.pe, 1) + ' · PB ' + fmt.num(c.pb, 2) + ' · 市值 ' + fmt.num(c.marketCapYi, 1) + ' 亿 · 用 ' +
       c.bars + ' 根日线</div>' +
     '<div class="rules">' + rules.map((x) => '<span class="rule ' + x.status + '" title="' + esc(x.detail) + '">' +
-      (ADVICE_ICON[x.status] || '') + ' ' + esc(x.label) + '</span>').join('') + '</div>' +
+      (ADVICE_ICON[x.status] ? icon(ADVICE_ICON[x.status]) + ' ' : '') + esc(x.label) + '</span>').join('') + '</div>' +
     '<div class="kv" style="margin-top:10px">' +
       '<dt>短期 / 中期</dt><dd>' + esc(h.short.verdict || '—') + ' / ' + esc(h.mid.verdict || '—') +
         ' <span class="dim">（' + esc((c.tech && c.tech.trend) || '') + '）</span></dd>' +
@@ -2607,6 +2620,321 @@ function bindEmbedEvents() {
   });
 }
 
+/* ================================ 智能体研判 ================================ */
+
+/*
+ * 本地多智能体引擎（后端 /api/agents/:code）在服务端跑，这里只负责把它的
+ * 结构画出来。整体结构和「个股体检」刻意不同：体检是逐条对照规则，
+ * 研判是把四个视角 + 一场多空辩论 + 交易员与风控的结论并排放，让人看到分歧在哪。
+ */
+
+const AGENTS_CODE_KEY = 'stockradar.agentsCode';
+const AGENT_STANCE_ICON = { bull: 'bull', bear: 'bear', neutral: 'dash' };
+
+function stanceBadge(node) {
+  return '<span class="stance ' + node.stance + '">' +
+    icon(AGENT_STANCE_ICON[node.stance]) + esc(node.stanceText) + '</span>';
+}
+
+/* 置信度用「数字 + 进度条」两个通道表达，不让颜色单独承担信息 */
+function confMeter(node) {
+  const pct = Math.max(0, Math.min(100, Number(node.confidence) || 0));
+  return '<span class="conf" title="置信度：由倾向强度与论据条数共同决定，论据不足时不给高置信">' +
+    '置信 <span class="bar"><i style="width:' + pct + '%"></i></span>' +
+    '<b class="num">' + pct + '</b></span>';
+}
+
+function findingsHtml(list) {
+  const rows = list || [];
+  if (!rows.length) return '<div class="dim" style="font-size:13px">这一环节没有可展示的论据。</div>';
+  return '<div class="findings">' + rows.map((f) =>
+    '<div class="finding ' + esc(f.stance) + '">' +
+      '<span class="fl"><i class="dot"></i>' + esc(f.label) + '</span>' +
+      '<span class="fv">' + esc(f.value) + '</span>' +
+      '<span class="fn">' + esc(f.note) + '</span>' +
+    '</div>').join('') + '</div>';
+}
+
+function agentCard(a) {
+  return '<div class="card agent-card">' +
+    '<div class="agent-head">' +
+      '<span class="avatar">' + icon(a.avatar) + '</span>' +
+      '<span class="who">' + esc(a.name) + '</span>' +
+      '<span class="role">' + esc(a.role) + '</span>' +
+      '<span class="grow"></span>' +
+      stanceBadge(a) + confMeter(a) +
+    '</div>' +
+    '<div class="agent-summary">' + esc(a.summary) + '</div>' +
+    findingsHtml(a.findings) +
+  '</div>';
+}
+
+function debateCol(side) {
+  // 后端把「我方论据」和「对方最强论据 + 失效条件」写在同一段 summary 里，
+  // 这里按分隔句拆开：前半段放正文，后半段单独做成醒目的回应块，便于扫读。
+  const parts = String(side.summary || '').split(' 对方最有力');
+  const own = parts[0];
+  const rest = parts[1] ? '对方最有力' + parts[1] : '';
+  const oppo = side.opponent
+    ? '<div class="oppo">' +
+      '<b>对方最强论据：</b>' + esc(side.opponent.label) + '（' + esc(side.opponent.value) + '，来自' + esc(side.opponent.from) + '）<br>' +
+      '<b>我方要成立，需要先看到：</b>' + esc(side.opponent.rebuttalCondition) +
+      '</div>'
+    : '';
+  return '<div class="debate-col ' + side.stance + '">' +
+    '<div class="agent-head">' + icon(AGENT_STANCE_ICON[side.stance]) +
+      '<span class="who">' + esc(side.name) + '</span>' +
+      '<span class="role">' + esc(side.role) + '</span>' +
+      '<span class="grow"></span>' +
+      '<span class="dim">' + side.evidenceCount + ' 条</span>' +
+    '</div>' +
+    (own ? '<div class="agent-summary" style="margin-top:8px">' + esc(own) + '</div>' : '') +
+    findingsHtml(side.findings) +
+    oppo +
+    (rest && !side.opponent ? '<div class="oppo">' + esc(rest) + '</div>' : '') +
+  '</div>';
+}
+
+function planRowsHtml(t) {
+  const p = t.plan || {};
+  const rows = [];
+  if (p.mode === 'trend-follow') {
+    rows.push(['参考回踩区间', fmt.num(p.zoneLow) + ' ~ ' + fmt.num(p.zoneHigh)]);
+  } else {
+    rows.push(['当前不构成回踩买点', p.reclaimLevel === null || p.reclaimLevel === undefined
+      ? '现价在 MA20 下方' : '需先收复 ' + fmt.num(p.reclaimLevel)]);
+  }
+  if (p.stopRef !== null && p.stopRef !== undefined) {
+    rows.push(['参考止损位', fmt.num(p.stopRef) + '（距现价 ' + fmt.num(p.stopPct) + '%，' + esc(p.stopBasis || '') + '）']);
+  }
+  if (p.targetRef !== null && p.targetRef !== undefined) rows.push(['上方参考位（20 日高点）', fmt.num(p.targetRef)]);
+  rows.push(['盈亏比', (p.riskReward === null || p.riskReward === undefined)
+    ? '暂不计算（逆势位置算出来会虚高）' : p.riskReward + ' : 1']);
+  if (p.maxPositionPct !== null && p.maxPositionPct !== undefined) rows.push(['参考仓位上限', fmt.num(p.maxPositionPct, 1) + '%']);
+  return '<div class="kv">' + rows.map((r) =>
+    '<dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd>').join('') + '</div>';
+}
+
+function traderCard(t, risk) {
+  const vetoWarn = risk && risk.vetoed
+    ? '<div class="veto-badge" style="margin-top:10px">' + icon('alert') +
+      '风控已触发 ' + risk.vetoes.length + ' 条否决项，下面的框架仅供参考，按规则不应执行</div>'
+    : '';
+  return '<div class="card agent-card">' +
+    '<div class="agent-head">' + icon('target') +
+      '<span class="who">' + esc(t.name) + '</span><span class="role">' + esc(t.role) + '</span>' +
+      '<span class="grow"></span>' + stanceBadge(t) + confMeter(t) +
+    '</div>' +
+    '<div class="agent-summary">' + esc(t.summary) + '</div>' +
+    planRowsHtml(t) + vetoWarn +
+    findingsHtml(t.findings) +
+  '</div>';
+}
+
+function riskCard(r) {
+  // 卡片里已经有：顶部「存在否决项」徽标 + summary（写明触发了哪几条、处置原则）+ findings 逐条清单，
+  // 所以不再单独铺一遍否决项数组——否则同一条否决会在卡片里出现两三次。
+  return '<div class="card agent-card">' +
+    '<div class="agent-head">' + icon('shield') +
+      '<span class="who">' + esc(r.name) + '</span><span class="role">' + esc(r.role) + '</span>' +
+      '<span class="grow"></span>' +
+      (r.vetoed ? '<span class="veto-badge">' + icon('alert') + '存在否决项</span>' : stanceBadge(r)) +
+    '</div>' +
+    '<div class="agent-summary">' + esc(r.summary) + '</div>' +
+    findingsHtml(r.findings) +
+  '</div>';
+}
+
+function renderAgents(d) {
+  const q = d.quote || {};
+  const ks = d.klineSummary || {};
+  const v = d.verdict || {};
+
+  $('#agentsVerdict').innerHTML =
+    '<div class="verdict-row">' +
+      '<span class="big">' + esc(d.name || d.code) + ' <span class="dim" style="font-size:14px">' + esc(d.code) + '</span></span>' +
+      (q.price !== undefined && q.price !== null
+        ? '<span class="num ' + fmt.cls(q.changePct) + '" style="font-size:16px">' + fmt.num(q.price) + ' (' + fmt.pct(q.changePct) + ')</span>'
+        : '<span class="dim">实时行情未取到</span>') +
+      '<span class="stance ' + (v.stance || 'neutral') + '">' + icon(AGENT_STANCE_ICON[v.stance] || 'dash') + esc(v.text || '—') + '</span>' +
+      (v.composite !== undefined ? '<span class="dim">四维合成 ' + (v.composite > 0 ? '+' : '') + v.composite + '</span>' : '') +
+      '<span class="dim">综合置信 ' + fmt.num(v.confidence, 0) + '</span>' +
+    '</div>' +
+    '<div class="hint" style="margin-top:10px">' +
+      (d.chain ? '产业链：<b>' + esc(d.chain.name) + '</b>（' + esc(d.chain.note) + '）' : '产业链：未匹配') +
+      (d.profile && d.profile.industry ? ' · 东财行业：' + esc(d.profile.industry) : '') +
+      ' · 技术面：' + esc(ks.trend || '—') +
+      ' · 用 ' + (ks.bars || 0) + ' 根日线' +
+      ' · MA20 五日斜率 ' + (ks.ma20SlopePct === null || ks.ma20SlopePct === undefined ? '—' : (ks.ma20SlopePct > 0 ? '+' : '') + ks.ma20SlopePct + '%') +
+      ' · 近 5 日 ' + fmt.pct(ks.change5Pct) +
+      ' · 更新 ' + fmt.time(d.updatedAt) +
+    '</div>' +
+    '<div class="notice" style="margin-top:10px">' + esc(d.disclaimer || '') + '</div>';
+
+  $('#agentsAnalysts').innerHTML = (d.analysts || []).map(agentCard).join('');
+  $('#agentsDebate').innerHTML = d.debate
+    ? debateCol(d.debate.bull) + debateCol(d.debate.bear) : '';
+  $('#agentsTraderRisk').innerHTML = traderCard(d.trader, d.risk) + riskCard(d.risk);
+
+  const gaps = d.dataGaps || [];
+  $('#agentsGapsCard').hidden = !gaps.length;
+  $('#agentsGaps').innerHTML = gaps.length
+    ? '<div class="gap-note">下面这些数据这次没取到，对应的那个维度<b>没有参与</b>结论，' +
+      '请当成「不知道」而不是「中性」：</div><div class="gap-list">' +
+      gaps.map((g) => '<span>' + esc(g) + '</span>').join('') + '</div>'
+    : '';
+}
+
+async function runAgents(code) {
+  const c = String(code || '').replace(/\D/g, '');
+  if (!/^\d{6}$/.test(c)) {
+    $('#agentsVerdict').innerHTML = '<span class="error">请输入 6 位股票代码</span>';
+    return;
+  }
+  try { localStorage.setItem(AGENTS_CODE_KEY, c); } catch (err) { /* 隐私模式下忽略 */ }
+  $('#agentsCode').value = c;
+  $('#agentsVerdict').innerHTML = '<div class="loading">正在让四个分析师各看一遍，然后开一场多空辩论…（首次约 5～20 秒）</div>';
+  $('#agentsAnalysts').innerHTML = '<div class="loading">加载中…</div>';
+  $('#agentsDebate').innerHTML = '<div class="loading">加载中…</div>';
+  $('#agentsTraderRisk').innerHTML = '<div class="loading">加载中…</div>';
+  $('#agentsGapsCard').hidden = true;
+  const link = $('#agentsLink');
+  if (link) link.innerHTML = '· <a href="#" id="agentsToAnalysis">看这只股票的个股体检 →</a>';
+  const toAnalysis = $('#agentsToAnalysis');
+  if (toAnalysis) toAnalysis.addEventListener('click', (e) => { e.preventDefault(); openAnalysis(c); });
+  try {
+    renderAgents(await api('/api/agents/' + c));
+  } catch (err) {
+    $('#agentsVerdict').innerHTML = '<span class="error">研判失败：' + esc(err.message) + '</span>';
+    $('#agentsAnalysts').innerHTML = '';
+    $('#agentsDebate').innerHTML = '';
+    $('#agentsTraderRisk').innerHTML = '';
+  }
+}
+
+async function initAgents() {
+  await renderQuickPicks('#agentsQuick', (code) => runAgents(code));
+  await loadIntegrationPanel();
+  if (state.agentsCode) return;
+  let first = null;
+  try { first = localStorage.getItem(AGENTS_CODE_KEY); } catch (err) { /* 隐私模式下忽略 */ }
+  if (!/^\d{6}$/.test(String(first || ''))) {
+    first = (state.watchlist && state.watchlist.stocks[0] && state.watchlist.stocks[0].code) || '600519';
+  }
+  state.agentsCode = first;
+  runAgents(first);
+}
+
+/* ---------- 外部程序接入：TradingAgents-CN ---------- */
+
+function probeLine(r) {
+  const ok = r.reachable && r.ok;
+  return '<div>' + (ok ? icon('check') : icon('x')) + ' ' + esc(r.url) +
+    ' <span class="dim">（' + esc(r.role) + '）</span> — ' +
+    (ok ? '<span class="dim">可访问，HTTP ' + r.status + '，' + r.ms + ' ms' +
+        (r.frameable ? '，允许被嵌入' : '，但对方设置了 ' + esc(r.blockedBy || '禁止嵌入') + '，只能在浏览器新窗口打开') + '</span>'
+      : '<span class="bad">连不上</span> <span class="dim">' + esc(r.error || '') + '</span>') +
+    '</div>';
+}
+
+function integrationHtml(info, status) {
+  const running = status && status.running;
+  const steps = (info.steps || []).map((s) => '<li><code>' + esc(s) + '</code></li>').join('');
+  const reqs = (info.requirements || []).map((s) => '<li>' + esc(s) + '</li>').join('');
+  const probes = (status && status.results || []).map(probeLine).join('');
+
+  return '<div class="int-status">' +
+      '<span class="int-pill' + (running ? ' on' : '') + '">' +
+        icon(running ? 'check' : 'plug') + (running ? '检测到本机正在运行' : '本机未检测到实例') + '</span>' +
+      '<span class="dim" style="font-size:12px">' + esc(info.tagline || '') + '</span>' +
+      '<a href="' + esc(info.repo) + '" target="_blank" rel="noreferrer noopener" style="font-size:12px">项目主页 ' + icon('external') + '</a>' +
+    '</div>' +
+    '<div class="int-probe">' + probes +
+      (status && status.checkedAt ? '<div class="dim">探测时间 ' + fmt.time(status.checkedAt) + '</div>' : '') + '</div>' +
+
+    '<div class="int-block">' +
+      '<h4>接入地址</h4>' +
+      '<div class="int-actions">' +
+        '<input id="intUrl" type="text" value="' + esc((info.config && info.config.baseUrl) || '') + '" aria-label="TradingAgents-CN 地址" placeholder="http://127.0.0.1:3000">' +
+        '<button class="action" id="intSave">保存并重新探测</button>' +
+        '<button id="intReprobe">' + icon('refresh') + ' 重新探测</button>' +
+      '</div>' +
+      '<div class="hint" style="margin-top:6px">默认前端 <code>http://127.0.0.1:3000</code>、后端 <code>http://127.0.0.1:8000</code>；只接受 http/https 地址。</div>' +
+    '</div>' +
+
+    (running && status.embeddable
+      ? '<div class="int-block"><h4>在下方嵌入</h4>' +
+        '<div class="int-actions"><button class="action" id="intEmbed">' + icon('plug') + ' 把 ' + esc(status.activeUrl) + ' 嵌到下面</button></div>' +
+        '<div id="intFrameBox"></div></div>'
+      : '') +
+
+    '<div class="int-block">' +
+      '<h4>怎么把它跑起来</h4>' +
+      '<div class="dim" style="font-size:12px;margin-bottom:6px">它需要 Python 3.11、MongoDB、Redis 和一份你自己的大模型 API Key，都装好之后：</div>' +
+      '<ol class="int-list">' + steps + '</ol>' +
+      '<div class="dim" style="font-size:12px;margin:10px 0 6px">环境要求：</div>' +
+      '<ul class="int-list">' + reqs + '</ul>' +
+    '</div>' +
+
+    '<div class="int-warn">' +
+      '<b>为什么不能直接内置：</b>' + esc(info.license.kind) + '。开源部分（' +
+      esc(info.license.openPart) + '）可以自由使用；但 ' + esc(info.license.closedPart) + '。' +
+      '本仓库是公开仓库，把那部分源码拷进来发布就等于再分发，所以这里只做「探测 + 嵌入 + 跳转」，不复制它的任何代码。' +
+      '<br>另外本工作站的研判是<b>本机规则引擎</b>算的，不调用大模型，也不需要任何 API Key；装了它之后可以在上面那块直接嵌进来对照看。' +
+    '</div>';
+}
+
+async function loadIntegrationPanel() {
+  const body = $('#agentsIntegrationBody');
+  if (!body) return;
+  body.innerHTML = '<div class="loading">正在检查本机是否有实例在运行…</div>';
+  let info = null;
+  let status = null;
+  try {
+    const list = await api('/api/integrations');
+    info = (list.integrations || [])[0] || null;
+  } catch (err) { /* 下面统一处理 */ }
+  if (!info) {
+    body.innerHTML = '<span class="error">接入信息加载失败，请点「重新加载整个工作站」再试。</span>';
+    return;
+  }
+  try { status = await api('/api/integrations/status?id=' + encodeURIComponent(info.id)); } catch (err) { /* 探测失败就按「未检测到」展示 */ }
+  body.innerHTML = integrationHtml(info, status);
+
+  const reprobe = () => loadIntegrationPanel();
+  const btnReprobe = $('#intReprobe');
+  if (btnReprobe) btnReprobe.addEventListener('click', reprobe);
+
+  const save = $('#intSave');
+  if (save) save.addEventListener('click', async () => {
+    const url = ($('#intUrl') || {}).value || '';
+    save.disabled = true;
+    try {
+      await api('/api/integrations/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: info.id, baseUrl: url })
+      });
+      toast('接入地址已保存，正在重新探测', 'ok');
+      await loadIntegrationPanel();
+    } catch (err) {
+      save.disabled = false;
+      toast('保存失败：' + err.message, 'err');
+    }
+  });
+
+  const embed = $('#intEmbed');
+  if (embed && status && status.activeUrl) {
+    embed.addEventListener('click', () => {
+      const box = $('#intFrameBox');
+      if (!box) return;
+      box.innerHTML = '<iframe class="int-frame" src="' + esc(status.activeUrl) + '" title="TradingAgents-CN" referrerpolicy="no-referrer"></iframe>';
+      embed.disabled = true;
+      embed.innerHTML = icon('check') + ' 已嵌入';
+    });
+  }
+}
+
 /* ---------------------------------- 路由 ---------------------------------- */
 
 /*
@@ -2616,13 +2944,13 @@ function bindEmbedEvents() {
  */
 const VIEW_TTL_MS = {
   overview: 30000, stocks: 30000, news: 60000, sources: 60000, screener: 180000,
-  advice: 180000, guba: 60000, analysis: 60000, commodity: 60000, coal: 120000, knowledge: 600000,
+  advice: 180000, agents: 300000, guba: 60000, analysis: 60000, commodity: 60000, coal: 120000, knowledge: 600000,
   embed: 600000
 };
 /* 状态栏倒计时用：比 TTL 略短，保证到点就会刷 */
 const VIEW_REFRESH_SEC = {
   overview: 30, stocks: 30, news: 60, sources: 60, screener: 180,
-  advice: 180, guba: 60, analysis: 60, commodity: 60, coal: 120, knowledge: 600,
+  advice: 180, agents: 300, guba: 60, analysis: 60, commodity: 60, coal: 120, knowledge: 600,
   embed: 600
 };
 
@@ -2650,6 +2978,7 @@ const VIEW_LOADERS = {
   sources: () => renderSources(),
   screener: () => renderScreener(),
   advice: () => renderAdvice(),
+  agents: () => initAgents(),
   guba: () => initGuba(),
   analysis: () => initAnalysis(),
   commodity: () => renderCommodity(),
@@ -2724,7 +3053,7 @@ function updateDataBar() {
   }
   const ageSec = Math.max(0, Math.round((Date.now() - st.at) / 1000));
   const sec = VIEW_REFRESH_SEC[name] || 60;
-  const err = st.error ? '<span class="up">⚠ 上次刷新失败</span> · ' : '';
+  const err = st.error ? '<span class="up">' + icon('alert') + ' 上次刷新失败</span> · ' : '';
   el.innerHTML = err + '本页数据 ' + fmt.time(new Date(st.at).toISOString()) + '（' + ageSec + ' 秒前）' +
     ' <span class="dim">· 每 ' + sec + ' 秒自动刷新</span>';
 }
@@ -2867,6 +3196,10 @@ function bindWorkbenchEvents() {
   const aInput = $('#analysisCode');
   if ($('#analysisLoad')) $('#analysisLoad').addEventListener('click', () => openAnalysis(aInput.value));
   if (aInput) aInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') openAnalysis(aInput.value); });
+
+  const gInput = $('#agentsCode');
+  if ($('#agentsLoad')) $('#agentsLoad').addEventListener('click', () => runAgents(gInput.value));
+  if (gInput) gInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runAgents(gInput.value); });
 
   const impBtn = $('#importCsvBtn');
   if (impBtn) impBtn.addEventListener('click', async () => {
