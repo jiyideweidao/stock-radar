@@ -3088,7 +3088,7 @@ async function switchView(name) {
   // 切页签回到顶部：手机上换了页还停在半中间很容易让人以为「没反应」
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
 
-  // 手机上的页签栏是横向可滑的（11 个页签一屏放不下），
+  // 手机上的页签栏是横向可滑的（12 个页签一屏放不下），
   // 切完之后把当前页签滚到中间，用户才知道自己现在在哪、也能发现这条栏可以滑
   const activeTab = document.querySelector('#tabs button.active');
   if (activeTab && typeof activeTab.scrollIntoView === 'function') {

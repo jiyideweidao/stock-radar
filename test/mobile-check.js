@@ -156,7 +156,7 @@ const PHONE = { width: 412, height: 915 };   // 安卓主流尺寸（Pixel / 小
   if (inputFont && inputFont < 16) problems.push('MWEB: 输入框字号 ' + inputFont + 'px，移动端会整页放大');
 
   // ---------- 7) 逐个页签截图 ----------
-  const TABS = ['overview', 'stocks', 'news', 'screener', 'advice', 'guba', 'commodity', 'coal', 'knowledge'];
+  const TABS = ['overview', 'stocks', 'news', 'screener', 'advice', 'agents', 'guba', 'commodity', 'coal', 'knowledge'];
   for (const id of TABS) {
     // 底部页签栏横向可滑，先滚进可视区再点（这也是真实用户要做的手势）
     await page.evaluate((view) => {
@@ -164,7 +164,8 @@ const PHONE = { width: 412, height: 915 };   // 安卓主流尺寸（Pixel / 小
       if (b) b.scrollIntoView({ block: 'nearest', inline: 'center' });
     }, id);
     await page.click('#tabs button[data-view="' + id + '"]');
-    await page.waitForTimeout(id === 'advice' ? 32000 : 6500);
+    // 选股建议和智能体研判都要跑一堆上游抓取，单独放宽等待
+    await page.waitForTimeout(id === 'advice' ? 32000 : id === 'agents' ? 24000 : 6500);
     const probe = await page.evaluate(() => {
       const active = document.querySelector('.view.active');
       const w = window.innerWidth;
